@@ -1,0 +1,6 @@
+selenium==4.35.0
+requests==2.32.4
+beautifulsoup4==4.13.4
+pillow==11.3.0
+lxml==6.0.0
+pytesseract==0.3.10

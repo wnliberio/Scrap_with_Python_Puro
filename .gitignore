@@ -1,0 +1,31 @@
+# Entorno virtual
+venv_mupi/
+venv/
+.env/
+envScrapPuroPy/
+envScrapPuroPy
+
+# Archivos de compilación de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de configuración y logs
+*.env
+*.log
+
+# Archivos de paquetes
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Archivos de IDEs
+.vscode/
+.idea/
+
+# Otros archivos temporales
+.DS_Store
+Thumbs.db
