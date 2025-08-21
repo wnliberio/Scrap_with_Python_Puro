@@ -1,12 +1,8 @@
 {
-  "0916260698001": {
-    "timestamp": "2025-08-18T19:04:06.281129",
+  "2300531528001": {
+    "timestamp": "2025-08-21T14:41:22.684943",
     "data": {
-      "Tipo contribuyente": "Régimen",
-      "PERSONA NATURAL": "GENERAL",
-      "Obligado a llevar contabilidad": "Agente de retención",
-      "NO": "NO",
-      "Fecha inicio actividades": "Fecha actualización"
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\sri_ruc_2300531528001_20250821_144117.png"
     }
   }
 }

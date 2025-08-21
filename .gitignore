@@ -2,8 +2,8 @@
 venv_mupi/
 venv/
 .env/
-envScrapPuroPy/
-envScrapPuroPy
+envScrap/
+envScrap
 
 # Archivos de compilación de Python
 __pycache__/
