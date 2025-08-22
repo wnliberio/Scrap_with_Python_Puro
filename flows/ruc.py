@@ -46,12 +46,12 @@ def process_ruc_once(ruc: str, headless: bool = False) -> Optional[Dict]:
             except Exception as e2:
                 log(f"❌ Fallback JS click falló: {e2}")
                 return None
-
+        # 4) (Posible) reCAPTCHA
         prepare_for_captcha(driver, zoom=1.2)
         if not wait_for_recaptcha_solved(driver):
             log("❌ No se pudo resolver el reCAPTCHA")
             return None
-
+        # 5) Esperar resultados visibles
         if not wait_for_results(driver):
             log("⏳ No aparecieron resultados a tiempo.")
             return None

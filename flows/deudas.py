@@ -1,11 +1,10 @@
-#Orquesta el flujo de la página Deudas: abrir URL, tipear, provocar validación (TAB), encontrar botón, 
+#Orquesta el flujo de la página Deudas  Firmes Impugnadas: abrir URL, tipear, provocar validación (TAB), encontrar botón, 
 # clic humano, resolver CAPTCHA si aparece, esperar resultados, captura final y salida 
 # { "screenshot_path": ... }. Con reintentos y cache como en RUC.
 
 # flows/deudas.py
 import time, random
 from typing import Optional, Dict
-from selenium.webdriver.common.keys import Keys
 
 from core.config import SRI_DEUDAS_URL, MAX_RETRIES
 from core.browser import create_driver
@@ -15,7 +14,10 @@ from core.pages.sri_deudas_page import (
 )
 # Reutilizamos utilidades genéricas del módulo RUC
 from core.pages.sri_ruc_page import (
-    prepare_for_captcha, wait_for_results
+    prepare_for_captcha
+)
+from core.pages.sri_deudas_page import (
+    wait_for_deudas_results
 )
 from core.captcha.recaptcha import wait_for_recaptcha_solved
 from core.utils.log import log
@@ -39,7 +41,7 @@ def process_deudas_once(ident: str, headless: bool = False) -> Optional[Dict]:
             return None
 
         human_type(ident_input, ident)
-        time.sleep(random.uniform(0.25, 0.6))
+        time.sleep(random.uniform(0.3, 0.7))
 
         # Forzar blur para que el sitio valide y "aparezca" el botón Consultar
         try:
@@ -77,7 +79,7 @@ def process_deudas_once(ident: str, headless: bool = False) -> Optional[Dict]:
             return None
 
         # 5) Esperar resultados visibles
-        if not wait_for_results(driver):
+        if not wait_for_deudas_results(driver):
             log("⏳ Deudas: no aparecieron resultados a tiempo.")
             return None
 

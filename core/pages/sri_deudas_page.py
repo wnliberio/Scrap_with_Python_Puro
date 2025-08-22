@@ -35,7 +35,7 @@ def find_ident_input(driver):
 def find_consultar_button_deudas(driver, timeout=25):
     """
     Ubica el botón 'Consultar' en Deudas.
-    Usa XPaths/selector que nos diste y, si no aparece, busca por Shadow DOM con texto 'Consultar'.
+    Usa XPaths/selector y, si no aparece, busca por Shadow DOM con texto 'Consultar'.
     """
     waits = WebDriverWait(driver, timeout, poll_frequency=0.25)
     try:

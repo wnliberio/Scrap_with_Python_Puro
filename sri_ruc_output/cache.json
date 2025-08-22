@@ -4,5 +4,11 @@
     "data": {
       "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\sri_ruc_2300531528001_20250821_150944.png"
     }
+  },
+  "deudas:2300531528001": {
+    "timestamp": "2025-08-22T10:41:21.085649",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\sri_deudas_2300531528001_20250822_104116.png"
+    }
   }
 }
