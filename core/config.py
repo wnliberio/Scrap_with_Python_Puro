@@ -9,7 +9,7 @@ CAPSOLVER_API_KEY = os.getenv("CAPSOLVER_API_KEY", "CAP-REEMPLAZA-CON-TU-KEY")
 CAPSOLVER_URL = "https://api-stable.capsolver.com/createTask"
 CAPSOLVER_RESULT_URL = "https://api-stable.capsolver.com/getTaskResult"
 
-# === URLs SRI ===
+# === URLs ===
 SRI_URL = os.getenv(
     "SRI_BASE_URL",
     "https://srienlinea.sri.gob.ec/sri-en-linea/SriRucWeb/ConsultaRuc/Consultas/consultaRuc"
@@ -17,6 +17,10 @@ SRI_URL = os.getenv(
 SRI_DEUDAS_URL = os.getenv(
     "SRI_DEUDAS_URL",
     "https://srienlinea.sri.gob.ec/sri-en-linea/SriPagosWeb/ConsultaDeudasFirmesImpugnadas/Consultas/consultaDeudasFirmesImpugnadas"
+)
+FISCALIAS_DENUNCIAS_URL = os.getenv(
+    "FISCALIAS_DENUNCIAS_URL",
+    "https://www.gestiondefiscalias.gob.ec/siaf/informacion/web/noticiasdelito/index.php"
 )
 
 # === Salida base ===
@@ -53,3 +57,6 @@ MOUSE_JITTER = int(os.getenv("MOUSE_JITTER", "2"))
 LOG_DIR = os.path.join(OUTPUT_DIR, "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, "app.log")
+
+# === Demora entre items (secuencial) ===
+INTER_ITEM_DELAY_SECONDS = int(os.getenv("INTER_ITEM_DELAY_SECONDS", "120"))

@@ -1,14 +1,38 @@
 {
   "2300531528001": {
-    "timestamp": "2025-08-21T15:09:49.985533",
+    "timestamp": "2025-08-22T13:19:56.538971",
     "data": {
-      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\sri_ruc_2300531528001_20250821_150944.png"
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\sri_ruc_2300531528001_20250822_131951.png"
     }
   },
   "deudas:2300531528001": {
-    "timestamp": "2025-08-22T10:41:21.085649",
+    "timestamp": "2025-08-22T13:14:38.409575",
     "data": {
-      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\sri_deudas_2300531528001_20250822_104116.png"
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\sri_deudas_2300531528001_20250822_131433.png"
+    }
+  },
+  "deudas:2300531528": {
+    "timestamp": "2025-08-22T12:28:46.195720",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\sri_deudas_2300531528_20250822_122840.png"
+    }
+  },
+  "deudas:1727393983": {
+    "timestamp": "2025-08-22T13:25:43.277337",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\sri_deudas_1727393983_20250822_132537.png"
+    }
+  },
+  "deudas:1800587626": {
+    "timestamp": "2025-08-22T13:29:29.092836",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\sri_deudas_1800587626_20250822_132923.png"
+    }
+  },
+  "denuncias:VELA VASCO MARCO ANTONIO": {
+    "timestamp": "2025-08-22T14:46:20.549943",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\fiscalias_denuncias_VELA_VASCO_MARCO_ANTONIO_20250822_144615.png"
     }
   }
 }
