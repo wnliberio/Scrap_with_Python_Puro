@@ -1,7 +1,6 @@
 # flows/antecedentes.py
 import time, random
 from typing import Optional, Dict
-
 from selenium.webdriver.common.keys import Keys
 
 from core.config import MAX_RETRIES
@@ -12,7 +11,9 @@ from core.utils.screenshot import save_fullpage_png
 from core.pages.antecedentes_page import (
     accept_cookies_if_present,
     accept_terms_if_present,
+    is_hcaptcha_present,
     click_hcaptcha_checkbox_iframe,
+    wait_until_ci_visible,
     find_ci_input, find_btn_siguiente, wait_overlay_please_wait,
     find_textarea_motivo, find_btn_open, maybe_btn_siguiente,
     switch_to_new_tab, wait_cert_loaded
@@ -31,10 +32,11 @@ def process_antecedentes_once(cedula: str, headless: bool = False) -> Optional[D
         # 1) Cookies/privacidad (puede salir aquí o luego)
         accept_cookies_if_present(driver)
 
-        # 2) hCaptcha: intentar clic checkbox; si hay desafío, luego será manual.
-        clicked = click_hcaptcha_checkbox_iframe(driver)
-        if not clicked:
-            log("ℹ️ hCaptcha: no se pudo clicar o no visible. Si aparece desafío, resuélvelo manualmente.")
+        # 2) hCaptcha: intentar clic checkbox (iframe newassets.hcaptcha.com)
+        if is_hcaptcha_present(driver):
+            clicked = click_hcaptcha_checkbox_iframe(driver, timeout=10)
+            if not clicked:
+                log("ℹ️ hCaptcha: no se pudo clicar el checkbox o hay desafío. Si aparece, resuélvelo manualmente.")
 
         # A veces el banner 'Aceptar!' aparece DESPUÉS del clic al captcha
         accept_cookies_if_present(driver)
@@ -42,23 +44,22 @@ def process_antecedentes_once(cedula: str, headless: bool = False) -> Optional[D
         # 3) Términos y Condiciones (modal)
         accept_terms_if_present(driver)
 
-        # 4) Cédula
+        # 4) Esperar hasta que aparezca el input de cédula (y seguir despejando gates mientras tanto)
+        if not wait_until_ci_visible(driver, max_wait=70):
+            log("❌ Antecedentes: no apareció el input #txtCi tras despejar captcha/avisos.")
+            return None
+
         ci = find_ci_input(driver)
         if not ci:
-            log("⚠️ Antecedentes: input de cédula (#txtCi) no visible aún. Espera breve…")
-            time.sleep(2.0)
-            ci = find_ci_input(driver)
-            if not ci:
-                log("❌ Antecedentes: no se encontró #txtCi.")
-                return None
+            log("❌ Antecedentes: #txtCi no está interactuable.")
+            return None
 
         human_type(ci, cedula)
-        time.sleep(random.uniform(0.3, 0.7))
+        time.sleep(random.uniform(0.25, 0.6))
         try:
             ci.send_keys(Keys.TAB)
         except Exception:
             pass
-        time.sleep(random.uniform(0.2, 0.5))
 
         # 5) Siguiente
         btn1 = find_btn_siguiente(driver)
@@ -77,7 +78,7 @@ def process_antecedentes_once(cedula: str, headless: bool = False) -> Optional[D
                 return None
 
         # 6) Espera overlay 'Por favor espere…'
-        wait_overlay_please_wait(driver, timeout=30)
+        wait_overlay_please_wait(driver, timeout=35)
 
         # 7) Motivo
         motivo = find_textarea_motivo(driver)
@@ -132,7 +133,7 @@ def process_antecedentes_once(cedula: str, headless: bool = False) -> Optional[D
             log("ℹ️ Antecedentes: no se detectó nueva pestaña; puede haberse abierto en la misma.")
 
         # 10) Esperar que cargue el certificado
-        if not wait_cert_loaded(driver, timeout=40):
+        if not wait_cert_loaded(driver, timeout=45):
             log("⏳ Antecedentes: no se confirmó carga del certificado; se tomará captura igualmente.")
 
         # 11) Captura final

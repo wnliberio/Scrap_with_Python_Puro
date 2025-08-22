@@ -11,6 +11,7 @@ from selenium.common.exceptions import TimeoutException
 from ..utils.log import log
 from ..config import RESULTS_TIMEOUT
 
+
 # -------------------------------
 # BANNERS / MODALES
 # -------------------------------
@@ -22,24 +23,23 @@ def accept_cookies_if_present(driver, timeout: int = 6) -> bool:
       <a class="cc-btn cc-dismiss">Aceptar!</a>
     """
     end = time.time() + timeout
-    clicked = False
 
     while time.time() < end:
         try:
-            # CSS directo
+            # CSS directa
             btns = driver.find_elements(By.CSS_SELECTOR, "a.cc-btn.cc-dismiss")
+            # por texto visible 'Aceptar!' (con o sin !)
+            btns += driver.find_elements(By.XPATH, "//a[normalize-space()='Aceptar!' or normalize-space()='Aceptar']")
             btns += driver.find_elements(By.XPATH, "//a[contains(@class,'cc-dismiss')]")
-            # por texto visible 'Aceptar!'
-            btns += driver.find_elements(By.XPATH, "//a[normalize-space()='Aceptar!' or contains(normalize-space(.),'Aceptar')]")
+
             for b in btns:
                 try:
                     if b.is_displayed():
                         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", b)
-                        time.sleep(0.2)
+                        time.sleep(0.15)
                         b.click()
-                        clicked = True
                         log("✅ Cookies/Privacidad: clic en 'Aceptar!'")
-                        time.sleep(0.4)
+                        time.sleep(0.3)
                         return True
                 except Exception:
                     continue
@@ -50,110 +50,128 @@ def accept_cookies_if_present(driver, timeout: int = 6) -> bool:
                 try:
                     if c.is_displayed():
                         driver.execute_script("arguments[0].click();", c)
-                        clicked = True
                         log("✅ Cookies/Privacidad: clic en contenedor (fallback).")
-                        time.sleep(0.4)
+                        time.sleep(0.3)
                         return True
                 except Exception:
                     continue
         except Exception:
             pass
-        time.sleep(0.25)
+        time.sleep(0.2)
 
-    if not clicked:
-        log("ℹ️ Cookies/Privacidad: banner no presente.")
+    log("ℹ️ Cookies/Privacidad: banner no presente.")
     return False
 
 
 def accept_terms_if_present(driver, timeout: int = 8) -> bool:
     """
     Acepta el modal de 'Términos y Condiciones' si aparece.
-    Busca botones 'Aceptar' en diálogos jQuery UI u otros.
     """
     end = time.time() + timeout
     while time.time() < end:
         try:
-            # Botón típico jQuery UI en footer de diálogos
             btns = driver.find_elements(By.XPATH,
                 "//div[contains(@class,'ui-dialog')]//button[.//span[normalize-space()='Aceptar']]"
             )
-            # O cualquier botón con texto 'Aceptar'
             btns += driver.find_elements(By.XPATH, "//button[normalize-space()='Aceptar']")
-            # Ruta proporcionada por el usuario (por si aparece exactamente así)
             btns += driver.find_elements(By.XPATH, "/html/body/div[6]/div[11]/button[2]")
 
             for b in btns:
                 try:
                     if b.is_displayed() and b.is_enabled():
                         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", b)
-                        time.sleep(0.2)
+                        time.sleep(0.15)
                         b.click()
                         log("✅ Términos y Condiciones: aceptado.")
-                        time.sleep(0.5)
+                        time.sleep(0.3)
                         return True
                 except Exception:
                     continue
         except Exception:
             pass
-        time.sleep(0.25)
+        time.sleep(0.2)
 
     log("ℹ️ Términos y Condiciones: modal no presente.")
     return False
 
 
 # -------------------------------
-# hCaptcha
+# hCaptcha helpers
 # -------------------------------
+
+def is_hcaptcha_present(driver) -> bool:
+    try:
+        frames = driver.find_elements(
+            By.CSS_SELECTOR,
+            "iframe[src*='hcaptcha.com'], iframe[src*='newassets.hcaptcha.com'], iframe[title*='hCaptcha']"
+        )
+        return any(f.is_displayed() for f in frames)
+    except Exception:
+        return False
+
 
 def click_hcaptcha_checkbox_iframe(driver, timeout: int = 12) -> bool:
     """
     Intenta clicar el checkbox de hCaptcha dentro de su iframe.
     NO resuelve desafíos gráficos; si aparecen, el flujo continuará por resolución manual.
-    Retorna True si logramos hacer el clic al checkbox.
+    Retorna True si logramos hacer el clic al checkbox (o equivalente).
     """
     end = time.time() + timeout
-    tried = False
+    clicked = False
+
     while time.time() < end:
         try:
-            iframes = driver.find_elements(By.CSS_SELECTOR, "iframe[src*='hcaptcha.com'], iframe[title*='hCaptcha']")
-            for ifr in iframes:
+            frames = driver.find_elements(
+                By.CSS_SELECTOR,
+                "iframe[src*='hcaptcha.com'], iframe[src*='newassets.hcaptcha.com'], iframe[title*='hCaptcha']"
+            )
+            for ifr in frames:
                 if not ifr.is_displayed():
                     continue
                 driver.switch_to.default_content()
                 driver.switch_to.frame(ifr)
-                time.sleep(0.3)
+                time.sleep(0.15)
 
-                # El checkbox suele tener id="checkbox"
-                elems = driver.find_elements(By.XPATH, "//*[@id='checkbox']") or \
-                        driver.find_elements(By.CSS_SELECTOR, "#checkbox")
-                if elems:
-                    tried = True
-                    cb = elems[0]
+                # Intentar múltiples selectores dentro del iframe
+                candidates = []
+                # 1) id 'checkbox' (lo que nos pasaste)
+                candidates += driver.find_elements(By.XPATH, "//*[@id='checkbox']")
+                # 2) rol checkbox
+                candidates += driver.find_elements(By.XPATH, "//*[@role='checkbox']")
+                # 3) label que contenga 'Soy humano'
+                candidates += driver.find_elements(By.XPATH, "//label[.//div[contains(normalize-space(),'Soy humano')]]")
+                # 4) el div del "label" visible (por si no hay checkbox como tal)
+                candidates += driver.find_elements(By.XPATH, "//*[@id='label' or contains(@class,'label')]")
+
+                for el in candidates:
                     try:
-                        ActionChains(driver).move_to_element(cb).pause(0.2).click().perform()
+                        if el.is_displayed():
+                            try:
+                                ActionChains(driver).move_to_element(el).pause(0.15).click().perform()
+                            except Exception:
+                                driver.execute_script("arguments[0].click();", el)
+                            log("✅ hCaptcha: clic en el checkbox/label.")
+                            clicked = True
+                            driver.switch_to.default_content()
+                            return True
                     except Exception:
-                        driver.execute_script("arguments[0].click();", cb)
-                    log("✅ hCaptcha: clic en checkbox.")
-                    driver.switch_to.default_content()
-                    return True
+                        continue
+
             driver.switch_to.default_content()
         except Exception:
             try:
                 driver.switch_to.default_content()
             except Exception:
                 pass
-        time.sleep(0.3)
+        time.sleep(0.25)
 
-    if not tried:
-        log("ℹ️ hCaptcha: iframe/checkbox no visible (quizá no aparece).")
-    else:
-        log("⚠️ hCaptcha: no se pudo clicar el checkbox (posible desafío).")
-    driver.switch_to.default_content()
+    if not clicked:
+        log("⚠️ hCaptcha: no se pudo clicar el checkbox (posible desafío o widget distinto).")
     return False
 
 
 # -------------------------------
-# Selectores del flujo
+# Selectores del flujo principal
 # -------------------------------
 
 def find_ci_input(driver) -> Optional[object]:
@@ -173,11 +191,9 @@ def find_ci_input(driver) -> Optional[object]:
 
 
 def find_btn_siguiente(driver) -> Optional[object]:
-    # Botón inicial 'Siguiente'
     candidates = []
     candidates += driver.find_elements(By.CSS_SELECTOR, "#btnSig1")
     candidates += driver.find_elements(By.XPATH, "//*[@id='btnSig1']")
-    # fallback por texto
     candidates += driver.find_elements(By.XPATH, "//button[.//span[normalize-space()='Siguiente'] or normalize-space()='Siguiente']")
     for b in candidates:
         try:
@@ -195,7 +211,6 @@ def wait_overlay_please_wait(driver, timeout: int = 25) -> None:
     """
     def any_wait_visible(drv):
         try:
-            # Busca cualquier nodo con ese texto en pantalla
             txt = (drv.execute_script("return document.body.innerText||''") or "").lower()
             return "por favor espere" in txt
         except Exception:
@@ -213,7 +228,7 @@ def wait_overlay_please_wait(driver, timeout: int = 25) -> None:
     while time.time() - t1 < timeout:
         if not any_wait_visible(driver):
             return
-        time.sleep(0.4)
+        time.sleep(0.35)
 
 
 def find_textarea_motivo(driver) -> Optional[object]:
@@ -233,11 +248,9 @@ def find_textarea_motivo(driver) -> Optional[object]:
 
 
 def find_btn_open(driver) -> Optional[object]:
-    # 'Visualizar Certificado'
     candidates = []
     candidates += driver.find_elements(By.CSS_SELECTOR, "#btnOpen")
     candidates += driver.find_elements(By.XPATH, "//*[@id='btnOpen']")
-    # fallback por texto
     candidates += driver.find_elements(By.XPATH, "//button[.//span[normalize-space()='Visualizar Certificado'] or normalize-space()='Visualizar Certificado']")
     for b in candidates:
         try:
@@ -249,9 +262,6 @@ def find_btn_open(driver) -> Optional[object]:
 
 
 def maybe_btn_siguiente(driver) -> Optional[object]:
-    """
-    Por si después del motivo hay otro 'Siguiente' antes de 'Visualizar Certificado'.
-    """
     candidates = driver.find_elements(By.XPATH, "//button[.//span[normalize-space()='Siguiente'] or normalize-space()='Siguiente']")
     for b in candidates:
         try:
@@ -263,31 +273,24 @@ def maybe_btn_siguiente(driver) -> Optional[object]:
 
 
 def switch_to_new_tab(driver, timeout: int = 15) -> bool:
-    """
-    Cambia al último handle si se abre una nueva pestaña.
-    """
     t0 = time.time()
     while time.time() - t0 < timeout:
         handles = driver.window_handles
         if len(handles) > 1:
             driver.switch_to.window(handles[-1])
-            time.sleep(0.5)
+            time.sleep(0.35)
             return True
-        time.sleep(0.3)
+        time.sleep(0.25)
     return False
 
 
 def wait_cert_loaded(driver, timeout: int = RESULTS_TIMEOUT) -> bool:
     """
     Espera a que la pestaña del certificado cargue.
-    Criterios:
-      - URL contiene 'certificado.php'
-      - O aparece texto 'CERTIFICADO DE ANTECEDENTES PENALES'
-      - O hay <object>/<embed> visibles (PDF/HTML)
     """
     try:
         WebDriverWait(driver, timeout).until(lambda d: _cert_ready(d))
-        time.sleep(0.6)
+        time.sleep(0.5)
         return True
     except TimeoutException:
         return False
@@ -319,3 +322,31 @@ def _cert_ready(drv) -> bool:
     except Exception:
         pass
     return False
+
+
+# -------------------------------
+# Helper para “esperar hasta ver el #txtCi”
+# -------------------------------
+
+def wait_until_ci_visible(driver, max_wait: int = 60) -> bool:
+    """
+    Bucle tolerante: mientras no exista #txtCi,
+    intenta aceptar cookies/terms y clicar el hCaptcha si aún está.
+    """
+    t0 = time.time()
+    while time.time() - t0 < max_wait:
+        el = find_ci_input(driver)
+        if el:
+            return True
+
+        # Mientras no esté el input, seguimos intentando despejar gates:
+        accept_cookies_if_present(driver, timeout=1)
+        accept_terms_if_present(driver, timeout=1)
+
+        # Si sigue el captcha, insistimos con mini intentos
+        if is_hcaptcha_present(driver):
+            click_hcaptcha_checkbox_iframe(driver, timeout=2)
+
+        time.sleep(0.5)
+    return False
+
