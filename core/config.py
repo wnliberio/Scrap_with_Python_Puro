@@ -59,4 +59,4 @@ os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, "app.log")
 
 # === Demora entre items (secuencial) ===
-INTER_ITEM_DELAY_SECONDS = int(os.getenv("INTER_ITEM_DELAY_SECONDS", "120"))
+INTER_ITEM_DELAY_SECONDS = int(os.getenv("INTER_ITEM_DELAY_SECONDS", "30"))

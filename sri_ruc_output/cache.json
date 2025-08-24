@@ -30,9 +30,45 @@
     }
   },
   "denuncias:VELA VASCO MARCO ANTONIO": {
-    "timestamp": "2025-08-22T14:46:20.549943",
+    "timestamp": "2025-08-24T00:20:28.089090",
     "data": {
-      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\fiscalias_denuncias_VELA_VASCO_MARCO_ANTONIO_20250822_144615.png"
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\fiscalias_denuncias_VELA_VASCO_MARCO_ANTONIO_20250824_002025.png"
+    }
+  },
+  "interpol:MACIAS VILLAMAR|": {
+    "timestamp": "2025-08-24T00:07:54.796729",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_MACIAS_VILLAMAR_20250824_000752.png"
+    }
+  },
+  "interpol:MACIAS VILLAMAR|JOSE ADOLFO": {
+    "timestamp": "2025-08-23T22:54:37.567421",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_MACIAS_VILLAMAR_JOSE_ADOLFO_20250823_225435.png"
+    }
+  },
+  "interpol:ROBLERO DELGADO|": {
+    "timestamp": "2025-08-23T23:09:39.822256",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_ROBLERO_DELGADO_20250823_230937.png"
+    }
+  },
+  "interpol:BALLIVIAN MALDONADO|": {
+    "timestamp": "2025-08-23T23:10:40.112358",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_BALLIVIAN_MALDONADO_20250823_231037.png"
+    }
+  },
+  "interpol:LLAGZHA|LUIS": {
+    "timestamp": "2025-08-23T23:12:30.753394",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_LLAGZHA_LUIS_20250823_231228.png"
+    }
+  },
+  "interpol:GUAMAN|LUIS AGUSTIN": {
+    "timestamp": "2025-08-24T00:21:24.449751",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_GUAMAN_LUIS_AGUSTIN_20250824_002122.png"
     }
   }
 }
