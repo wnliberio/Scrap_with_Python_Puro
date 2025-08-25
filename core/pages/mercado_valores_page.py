@@ -1,134 +1,160 @@
 # core/pages/mercado_valores_page.py
 import time
 import random
-from typing import Optional, List
+from typing import Optional, Tuple
 
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException
 
-from ..utils.log import log
+from core.utils.log import log
+from core.human import human_type, human_click_element
 
-MERCADO_VALORES_URL = (
-    "https://appscvsgen.supercias.gob.ec/consultaCompanias/mercadoValores/busquedaEntesMv.jsf"
-)
+MERCADO_VALORES_URL = "https://appscvsgen.supercias.gob.ec/consultaCompanias/mercadoValores/busquedaEntesMv.jsf"
 
-# -------- utilidades pequeñas "humanas" ----------
-def _wait(secs: float):
-    time.sleep(random.uniform(secs * 0.65, secs * 1.15))
+def _sleep(a: float, b: float):
+    time.sleep(random.uniform(a, b))
 
-
-# -------------------- Finders --------------------
-def find_param_input(driver, timeout: int = 20):
-    """
-    Input de búsqueda (mismo id tanto para Identificación como para Nombre):
-    #frmBusquedaEntesMv:parametroBusqueda_input
-    """
+# --------------------
+# Finders del formulario
+# --------------------
+def find_main_input(driver, timeout: int = 20):
     try:
-        el = WebDriverWait(driver, timeout).until(
+        return WebDriverWait(driver, timeout).until(
             EC.presence_of_element_located((By.ID, "frmBusquedaEntesMv:parametroBusqueda_input"))
         )
-        return el
     except TimeoutException:
         return None
 
-
-def select_mode_nombre(driver, timeout: int = 10) -> bool:
+def click_radio_nombre(driver, timeout: int = 10) -> bool:
     """
-    Cambia el radio a 'Nombre'.
-    XPath sugerido: //*[@id="frmBusquedaEntesMv:tipoBusqueda"]/tbody/tr/td[2]/div/div[2]/span
-    Hacemos el selector un poco más robusto.
+    Selecciona la opción 'Nombre' (radio). Hay varios envoltorios
+    de PrimeFaces; enfocamos el box clickable.
     """
     try:
-        rb = WebDriverWait(driver, timeout).until(
-            EC.element_to_be_clickable(
-                (
-                    By.XPATH,
-                    '//*[@id="frmBusquedaEntesMv:tipoBusqueda"]//td[2]//div[contains(@class,"ui-radiobutton-box")]',
-                )
-            )
+        box = WebDriverWait(driver, timeout).until(
+            EC.element_to_be_clickable((By.XPATH, "//*[@id='frmBusquedaEntesMv:tipoBusqueda']/tbody/tr/td[2]//div[contains(@class,'ui-radiobutton-box')]"))
         )
-        try:
-            ActionChains(driver).move_to_element(rb).pause(0.15).click().perform()
-        except Exception:
-            rb.click()
-        _wait(0.25)
+        human_click_element(driver, box)
+        _sleep(0.2, 0.4)
         return True
-    except TimeoutException:
-        log("⚠️ No pude encontrar el radio 'Nombre'.")
+    except Exception as e:
+        log(f"⚠️ Radio 'Nombre' no clickeable: {e}")
         return False
 
+def press_enter(driver, el) -> None:
+    try:
+        el.send_keys(Keys.ENTER)
+        _sleep(0.3, 0.6)
+    except Exception:
+        pass
 
-def wait_after_enter(driver, timeout: int = 18) -> bool:
+# --------------------
+# CAPTCHA
+# --------------------
+def find_captcha_image(driver, timeout: int = 20):
+    try:
+        return WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.ID, "frmBusquedaEntesMv:captchaImage"))
+        )
+    except TimeoutException:
+        return None
+
+def find_captcha_input(driver, timeout: int = 15):
+    try:
+        return WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.ID, "frmBusquedaEntesMv:captcha"))
+        )
+    except TimeoutException:
+        return None
+
+def save_captcha_png(el, path: str) -> str:
     """
-    Tras presionar ENTER, esperamos a que:
-      - aparezca el captcha, o
-      - se hidrate el panel con datos del ente seleccionado.
+    Screenshot SOLO del nodo captcha (más robusto que recortar fullpage).
+    """
+    el.screenshot(path)
+    return path
+
+def find_consultar_button(driver, timeout: int = 15):
+    try:
+        return WebDriverWait(driver, timeout).until(
+            EC.element_to_be_clickable((By.ID, "frmBusquedaEntesMv:btnConsultarEnteMv"))
+        )
+    except TimeoutException:
+        return None
+
+# --------------------
+# Resultados / Errores
+# --------------------
+def wait_results_or_error(driver, timeout: int = 35) -> Tuple[str, Optional[str]]:
+    """
+    Espera a que:
+      - Existan resultados (panel con datos) → ('ok', None)
+      - Aparezca mensaje de error (p.ej. captcha) → ('captcha_error'|'error', texto)
+      - Timeout → ('timeout', None)
     """
     end = time.time() + timeout
+    last_err = None
+
     while time.time() < end:
         try:
-            # 1) ¿Ya está el captcha visible?
-            captcha = driver.find_elements(By.ID, "frmBusquedaEntesMv:captchaImage")
-            if any(getattr(c, "is_displayed", lambda: False)() for c in captcha):
-                return True
+            # ¿Mensajes de error?
+            errs = driver.find_elements(By.CSS_SELECTOR, ".ui-messages-error, .ui-message-error, .ui-messages-warn")
+            if errs:
+                txt = " ".join((e.text or "") for e in errs).strip()
+                low = txt.lower()
+                if any(k in low for k in ["captcha", "imagen", "no coincide", "incorrect"]):
+                    return ("captcha_error", txt or None)
+                return ("error", txt or None)
 
-            # 2) ¿Texto típico del panel?
-            txt = (driver.execute_script("return document.body.innerText||''") or "").lower()
-            if "ente de mercado de valores seleccionado" in txt:
-                return True
-        except Exception:
-            pass
-        _wait(0.35)
-    return False
+            
+            # ¿Resultados visibles?
+            body_text = (driver.execute_script("return document.body.innerText || ''") or "").lower()
+            if ("fideicomiso mercantil inmobiliario" in body_text
+            or ("no. inscripción:" in body_text and "fecha inscripción:" in body_text)
+            or ("información general" in body_text and "vigente" in body_text)):
+                return ("ok", None)
 
+            time.sleep(0.35)
+        except Exception as e:
+            last_err = str(e)
+            time.sleep(0.4)
 
-def _autocomplete_items(driver) -> List:
-    """Obtiene los <li> del autocompletar (si existieran)."""
-    try:
-        panel = driver.find_element(By.ID, "frmBusquedaEntesMv:parametroBusqueda_panel")
-        return panel.find_elements(By.CSS_SELECTOR, "ul.ui-autocomplete-items > li")
-    except Exception:
-        return []
+    return ("timeout", last_err)
 
-
-def click_first_autocomplete_if_any(driver) -> bool:
+# --------------------
+# Etapa 1 (preparación + captura captcha)
+# --------------------
+def stage1_fill_and_capture(driver, query: str, mode: str, captcha_outpath: str) -> bool:
     """
-    Algunas veces tras ENTER hay que 'aceptar' el primer ítem sugerido.
+    mode: 'ident' (por defecto) | 'nombre'
     """
-    try:
-        items = _autocomplete_items(driver)
-        if not items:
-            return False
-        li = items[0]
-        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", li)
-        _wait(0.15)
-        try:
-            ActionChains(driver).move_to_element(li).pause(0.12).click().perform()
-        except Exception:
-            li.click()
-        _wait(0.25)
-        return True
-    except Exception:
+    log(f"➡️ Abriendo {MERCADO_VALORES_URL}")
+    driver.get(MERCADO_VALORES_URL)
+    _sleep(0.7, 1.3)
+
+    if mode == "nombre":
+        if not click_radio_nombre(driver):
+            log("⚠️ No se pudo seleccionar 'Nombre', se intenta igualmente.")
+        _sleep(0.25, 0.5)
+
+    inp = find_main_input(driver, timeout=25)
+    if not inp:
+        log("❌ No se encontró el input principal.")
         return False
 
+    human_type(inp, query)
+    _sleep(0.25, 0.55)
+    press_enter(driver, inp)
 
-def wait_captcha_ready(driver, timeout: int = 18):
-    """
-    Espera y devuelve el elemento <img> del captcha.
-    """
-    try:
-        el = WebDriverWait(driver, timeout).until(
-            EC.visibility_of_element_located((By.ID, "frmBusquedaEntesMv:captchaImage"))
-        )
-        # Asegurar que esté en viewport
-        try:
-            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
-        except Exception:
-            pass
-        _wait(0.35)
-        return el
-    except TimeoutException:
-        return None
+    # Aparece captcha
+    img = find_captcha_image(driver, timeout=25)
+    if not img:
+        log("❌ No se encontró la imagen del captcha.")
+        return False
+
+    save_captcha_png(img, captcha_outpath)
+    log(f"📸 MercadoValores: captcha guardado en: {captcha_outpath}")
+    return True

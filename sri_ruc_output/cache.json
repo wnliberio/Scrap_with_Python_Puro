@@ -36,9 +36,9 @@
     }
   },
   "interpol:MACIAS VILLAMAR|": {
-    "timestamp": "2025-08-24T00:07:54.796729",
+    "timestamp": "2025-08-24T04:54:03.099355",
     "data": {
-      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_MACIAS_VILLAMAR_20250824_000752.png"
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_MACIAS_VILLAMAR_20250824_045400.png"
     }
   },
   "interpol:MACIAS VILLAMAR|JOSE ADOLFO": {
@@ -69,6 +69,44 @@
     "timestamp": "2025-08-24T00:21:24.449751",
     "data": {
       "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_GUAMAN_LUIS_AGUSTIN_20250824_002122.png"
+    }
+  },
+  "mercadovalores:ident:1792996325001": {
+    "timestamp": "2025-08-24T04:24:16.260064",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\mercado_valores_1792996325001_20250824_042413_20250824_042414.png"
+    }
+  },
+  "mercadovalores:CEDEGUIM S.A.": {
+    "timestamp": "2025-08-24T03:15:50.407015",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\mercadovalores_fallback_20250824_031548.png",
+      "captcha_path": null
+    }
+  },
+  "mercadovalores:1792996325001": {
+    "timestamp": "2025-08-24T03:18:27.445230",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\mercadovalores_fallback_20250824_031825.png",
+      "captcha_path": "sri_ruc_output\\screenshot_captchas\\mercadovalores_CAPTCHA_1792996325001_20250824_031825.png"
+    }
+  },
+  "mercadovalores:nombre:CEDEGUIM S.A.": {
+    "timestamp": "2025-08-24T04:18:30.985155",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\mercado_valores_CEDEGUIM_S_A__20250824_041828_20250824_041828.png"
+    }
+  },
+  "denuncias:MACIAS VILLAMAR": {
+    "timestamp": "2025-08-24T04:23:17.546347",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\fiscalias_denuncias_MACIAS_VILLAMAR_20250824_042315.png"
+    }
+  },
+  "interpol:MACIAS VILLAMAR|JOSE": {
+    "timestamp": "2025-08-24T04:37:22.947154",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_MACIAS_VILLAMAR_JOSE_20250824_043720.png"
     }
   }
 }
