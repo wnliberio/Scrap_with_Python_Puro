@@ -17,7 +17,7 @@ AZ_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "")
 AZ_DEBUG = os.getenv("AZURE_OCR_DEBUG", "0") == "1"
 
 # httpx como en tu snippet (nota: verify=False desactiva validación TLS; úsalo con cuidado)
-_httpx = httpx.Client(timeout=30.0, verify=False, proxy=None)
+_httpx = httpx.Client(timeout=30.0, verify=False, proxies=None)
 
 _client: Optional[AzureOpenAI] = None
 
