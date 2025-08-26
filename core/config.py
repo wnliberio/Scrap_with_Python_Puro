@@ -45,7 +45,7 @@ RESULTS_TIMEOUT = int(os.getenv("RESULTS_TIMEOUT", "60"))
 RECAPTCHA_TIMEOUT = int(os.getenv("RECAPTCHA_TIMEOUT", "180"))
 
 # Reintentos
-MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "2"))
 
 # Movimiento de mouse
 MOUSE_MIN_TIME = float(os.getenv("MOUSE_MIN_TIME", "0.7"))
@@ -59,4 +59,4 @@ os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, "app.log")
 
 # === Demora entre items (secuencial) ===
-INTER_ITEM_DELAY_SECONDS = int(os.getenv("INTER_ITEM_DELAY_SECONDS", "30"))
+INTER_ITEM_DELAY_SECONDS = int(os.getenv("INTER_ITEM_DELAY_SECONDS", "8"))
