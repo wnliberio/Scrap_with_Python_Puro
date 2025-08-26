@@ -108,5 +108,18 @@
     "data": {
       "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_MACIAS_VILLAMAR_JOSE_20250824_043720.png"
     }
+  },
+  "contraloria:1800587626:stage1": {
+    "timestamp": "2025-08-26T16:19:31.618307",
+    "data": {
+      "captcha_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshot_captchas\\contraloria_CAPTCHA_1800587626_20250826_161910.png",
+      "cedula": "1800587626"
+    }
+  },
+  "contraloria:1800587626:stage2": {
+    "timestamp": "2025-08-26T17:20:20.638743",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\contraloria_ddjj_1800587626_20250826_172014_20250826_172014.png"
+    }
   }
 }
