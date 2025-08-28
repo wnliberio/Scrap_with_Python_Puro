@@ -1,8 +1,7 @@
-# app/models/schemas.py
 from typing import List, Literal, Optional, Dict, Any
 from pydantic import BaseModel, Field, constr
 
-# Incluye mercado_valores, interpol, google, contraloria y supercias_persona
+# Incluye mercado_valores, interpol, google, contraloria, supercias_persona y predio_quito (nuevo)
 TipoItem = Literal[
     "ruc",
     "deudas",
@@ -11,13 +10,14 @@ TipoItem = Literal[
     "interpol",
     "google",
     "contraloria",
-    "supercias_persona",   # <-- NUEVO
+    "supercias_persona",   # <-- EXISTENTE
+    "predio_quito",        # <-- NUEVO
 ]
 
 class QueryItem(BaseModel):
     tipo: TipoItem = Field(
         ...,
-        description="Tipo de consulta (ruc | deudas | denuncias | mercado_valores | interpol | google | contraloria | supercias_persona)"
+        description="Tipo de consulta (ruc | deudas | denuncias | mercado_valores | interpol | google | contraloria | supercias_persona | predio_quito)"
     )
 
     # Valor principal (se usa para todos los tipos)

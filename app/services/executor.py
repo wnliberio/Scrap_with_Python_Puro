@@ -1,4 +1,3 @@
-# app/services/executor.py
 from typing import Dict, Any, List
 from time import sleep
 from core.utils.log import log
@@ -11,6 +10,7 @@ from flows.interpol import run_interpol_search
 from flows.contraloria_ddjj import run_contraloria_ddjj
 from flows.google_search import run_google_search 
 from flows.supercias_persona import run_supercias_persona
+from flows.predio_quito import run_predio_quito  # <-- NUEVO
 
 from app.models.schemas import QueryItem
 from core.config import INTER_ITEM_DELAY_SECONDS
@@ -78,25 +78,33 @@ def run_items(items: List[QueryItem], headless: bool = False) -> Dict[str, Any]:
                 res = run_interpol_search(apellidos_o_full=ap, nombres=no, headless=headless)
                 results["interpol"] = res
 
-        elif tipo == "contraloria":  # NEW
+        elif tipo == "contraloria":  # EXISTENTE
             if not (valor.isdigit() and len(valor) == 10):
                 results["contraloria"] = {"error": "Cédula inválida: deben ser exactamente 10 dígitos."}
             else:
                 res = run_contraloria_ddjj(cedula=valor, solve=True, headless=headless)
                 results["contraloria"] = res
         
-        elif tipo == "google":  # <-- NUEVO
+        elif tipo == "google":  # EXISTENTE
             # Validación ligera (ya la hace el front y el schema)
             res = run_google_search(valor, headless=headless)
             results["google"] = res
         
-        elif tipo == "supercias_persona":  # <-- NUEVO
+        elif tipo == "supercias_persona":  # EXISTENTE
             # Auto: si 10 dígitos => Identificación; de lo contrario Nombre
             if valor.isdigit() and len(valor) != 10:
                 results["supercias_persona"] = {"error": "La cédula debe tener exactamente 10 dígitos."}
             else:
                 res = run_supercias_persona(valor, mode="auto", headless=headless)
                 results["supercias_persona"] = res
+
+        elif tipo == "predio_quito":  # <-- NUEVO
+            # Se espera Apellidos y Nombres (mín. 3 chars)
+            if len(valor) < 3:
+                results["predio_quito"] = {"error": "Predio Quito: ingresa Apellidos y Nombres válidos."}
+            else:
+                res = run_predio_quito(valor, headless=headless)
+                results["predio_quito"] = res
 
         else:
             results[tipo] = {"error": f"Tipo no soportado: {tipo}"}

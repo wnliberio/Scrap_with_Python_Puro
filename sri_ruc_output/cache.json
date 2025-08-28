@@ -163,5 +163,36 @@
     "data": {
       "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_ident_2300531528_20250828_120857_20250828_120858.png"
     }
+  },
+  "predio_quito:VELA VASCO MARCO ANTONIO": {
+    "timestamp": "2025-08-28T15:28:10.252403",
+    "data": {
+      "scenario": "no_pending",
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\predio_quito_detalle_VELA_VASCO_MARCO_ANTONIO_20250828_152758_20250828_152758.png",
+      "screenshot_historial_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\predio_quito_historial_VELA_VASCO_MARCO_ANTONIO_20250828_152804_20250828_152804.png"
+    }
+  },
+  "predio_quito:LIBERIO CASTILLO WILLIAN NICOLAS": {
+    "timestamp": "2025-08-28T15:09:11.804644",
+    "data": {
+      "scenario": "pending",
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\predio_quito_detalle_LIBERIO_CASTILLO_WILLIAN_NICOLAS_20250828_150900_20250828_150900.png",
+      "screenshot_historial_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\predio_quito_historial_LIBERIO_CASTILLO_WILLIAN_NICOLAS_20250828_150905_20250828_150905.png"
+    }
+  },
+  "predio_quito:ROBALINO GUAMAN KLEVER SANDRO": {
+    "timestamp": "2025-08-28T15:34:08.790138",
+    "data": {
+      "scenario": "no_records",
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\predio_quito_no_records_ROBALINO_GUAMAN_KLEVER_SANDRO_20250828_153403_20250828_153403.png"
+    }
+  },
+  "predio_quito:liberio castillo willian nicolas": {
+    "timestamp": "2025-08-28T15:31:02.351567",
+    "data": {
+      "scenario": "pending",
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\predio_quito_detalle_liberio_castillo_willian_nicolas_20250828_153050_20250828_153050.png",
+      "screenshot_historial_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\predio_quito_historial_liberio_castillo_willian_nicolas_20250828_153056_20250828_153056.png"
+    }
   }
 }
