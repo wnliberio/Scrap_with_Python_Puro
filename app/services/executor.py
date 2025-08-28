@@ -5,8 +5,10 @@ from core.utils.log import log
 from flows.ruc import process_ruc
 from flows.deudas import process_deudas
 from flows.denuncias import process_denuncias
-from flows.mercado_valores import run_mercado_valores 
+from flows.mercado_valores import run_mercado_valores
 from flows.interpol import run_interpol_search
+from flows.contraloria_ddjj import run_contraloria_ddjj
+from flows.google_search import run_google_search  
 
 from app.models.schemas import QueryItem
 from core.config import INTER_ITEM_DELAY_SECONDS
@@ -73,6 +75,18 @@ def run_items(items: List[QueryItem], headless: bool = False) -> Dict[str, Any]:
             else:
                 res = run_interpol_search(apellidos_o_full=ap, nombres=no, headless=headless)
                 results["interpol"] = res
+
+        elif tipo == "contraloria":  # NEW
+            if not (valor.isdigit() and len(valor) == 10):
+                results["contraloria"] = {"error": "Cédula inválida: deben ser exactamente 10 dígitos."}
+            else:
+                res = run_contraloria_ddjj(cedula=valor, solve=True, headless=headless)
+                results["contraloria"] = res
+        
+        elif tipo == "google":  # <-- NUEVO
+            # Validación ligera (ya la hace el front y el schema)
+            res = run_google_search(valor, headless=headless)
+            results["google"] = res
 
         else:
             results[tipo] = {"error": f"Tipo no soportado: {tipo}"}

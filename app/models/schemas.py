@@ -1,18 +1,19 @@
+# app/models/schemas.py
 from typing import List, Literal, Optional, Dict, Any
 from pydantic import BaseModel, Field, constr
 
-# Incluye mercado_valores e interpol
-TipoItem = Literal["ruc", "deudas", "denuncias", "mercado_valores", "interpol"]
+# Incluye mercado_valores, interpol, google y contraloria
+TipoItem = Literal["ruc", "deudas", "denuncias", "mercado_valores", "interpol", "google", "contraloria"]
 
 class QueryItem(BaseModel):
-    tipo: TipoItem = Field(..., description="Tipo de consulta (ruc | deudas | denuncias | mercado_valores | interpol)")
+    tipo: TipoItem = Field(..., description="Tipo de consulta (ruc | deudas | denuncias | mercado_valores | interpol | google | contraloria)")
 
-    # Valor principal (se usa para todos los tipos; para INTERPOL lo llenaremos con apellidos o nombres)
-    valor: constr(strip_whitespace=True, min_length=2, max_length=80) = Field(
-        ..., description="Dato requerido por la página (RUC/Cédula/Nombres/Entidad/Apellidos)"
+    # Valor principal (se usa para todos los tipos; p.ej.: texto para google, cédula 10 dígitos para contraloria)
+    valor: constr(strip_whitespace=True, min_length=2, max_length=120) = Field(
+        ..., description="Dato requerido por la página (RUC/Cédula/Nombres/Entidad/Apellidos/Texto de búsqueda)"
     )
 
-    # Campos opcionales ESPECÍFICOS para INTERPOL (libre elección: uno u ambos)
+    # Opcionales para INTERPOL (libre elección)
     apellidos: Optional[constr(strip_whitespace=True, min_length=1, max_length=80)] = Field(
         None, description="(INTERPOL) Apellidos. Puedes dejarlo vacío si solo envías nombres."
     )
@@ -42,3 +43,4 @@ class JobStatusResponse(BaseModel):
     status: Literal["queued", "running", "done", "error"]
     data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+

@@ -72,9 +72,9 @@
     }
   },
   "mercadovalores:ident:1792996325001": {
-    "timestamp": "2025-08-24T04:24:16.260064",
+    "timestamp": "2025-08-27T23:16:13.999959",
     "data": {
-      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\mercado_valores_1792996325001_20250824_042413_20250824_042414.png"
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\mercado_valores_1792996325001_20250827_231611_20250827_231611.png"
     }
   },
   "mercadovalores:CEDEGUIM S.A.": {
@@ -117,9 +117,27 @@
     }
   },
   "contraloria:1800587626:stage2": {
-    "timestamp": "2025-08-26T17:20:20.638743",
+    "timestamp": "2025-08-27T21:57:14.317455",
     "data": {
-      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\contraloria_ddjj_1800587626_20250826_172014_20250826_172014.png"
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\contraloria_ddjj_1800587626_20250827_215711_20250827_215712.png"
+    }
+  },
+  "interpol:Macias Villamar|": {
+    "timestamp": "2025-08-27T22:02:47.957757",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_Macias_Villamar_20250827_220245.png"
+    }
+  },
+  "contraloria:2300531528:stage2": {
+    "timestamp": "2025-08-27T23:05:55.572462",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\contraloria_ddjj_2300531528_20250827_230553_20250827_230553.png"
+    }
+  },
+  "google:VELA VASCO MARCO ANTONIO": {
+    "timestamp": "2025-08-27T23:05:16.422369",
+    "data": {
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\google_VELA_VASCO_MARCO_ANTONIO_20250827_230514.png"
     }
   }
 }
