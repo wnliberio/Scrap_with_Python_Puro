@@ -139,5 +139,29 @@
     "data": {
       "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\google_VELA_VASCO_MARCO_ANTONIO_20250827_230514.png"
     }
+  },
+  "supercias_persona:ident:1800587626": {
+    "timestamp": "2025-08-28T12:02:21.745909",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_ident_1800587626_20250828_120216_20250828_120217.png"
+    }
+  },
+  "supercias_persona:nombre:VELA VASCO MARCO ANTONIO": {
+    "timestamp": "2025-08-28T12:04:16.800877",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_nombre_VELA_VASCO_MARCO_ANTONIO_20250828_120412_20250828_120412.png"
+    }
+  },
+  "supercias_persona:nombre:vela vasco marco antonio": {
+    "timestamp": "2025-08-28T12:07:01.024330",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_nombre_vela_vasco_marco_antonio_20250828_120656_20250828_120656.png"
+    }
+  },
+  "supercias_persona:ident:2300531528": {
+    "timestamp": "2025-08-28T12:09:02.482520",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_ident_2300531528_20250828_120857_20250828_120858.png"
+    }
   }
 }

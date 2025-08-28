@@ -2,15 +2,28 @@
 from typing import List, Literal, Optional, Dict, Any
 from pydantic import BaseModel, Field, constr
 
-# Incluye mercado_valores, interpol, google y contraloria
-TipoItem = Literal["ruc", "deudas", "denuncias", "mercado_valores", "interpol", "google", "contraloria"]
+# Incluye mercado_valores, interpol, google, contraloria y supercias_persona
+TipoItem = Literal[
+    "ruc",
+    "deudas",
+    "denuncias",
+    "mercado_valores",
+    "interpol",
+    "google",
+    "contraloria",
+    "supercias_persona",   # <-- NUEVO
+]
 
 class QueryItem(BaseModel):
-    tipo: TipoItem = Field(..., description="Tipo de consulta (ruc | deudas | denuncias | mercado_valores | interpol | google | contraloria)")
+    tipo: TipoItem = Field(
+        ...,
+        description="Tipo de consulta (ruc | deudas | denuncias | mercado_valores | interpol | google | contraloria | supercias_persona)"
+    )
 
-    # Valor principal (se usa para todos los tipos; p.ej.: texto para google, cédula 10 dígitos para contraloria)
+    # Valor principal (se usa para todos los tipos)
     valor: constr(strip_whitespace=True, min_length=2, max_length=120) = Field(
-        ..., description="Dato requerido por la página (RUC/Cédula/Nombres/Entidad/Apellidos/Texto de búsqueda)"
+        ...,
+        description="Dato requerido por la página (RUC/Cédula/Nombres/Entidad/Apellidos/Texto de búsqueda)"
     )
 
     # Opcionales para INTERPOL (libre elección)
@@ -23,7 +36,7 @@ class QueryItem(BaseModel):
 
     # Compat Mercado de Valores; el backend fuerza auto+solve
     mode: Optional[Literal["auto", "ident", "nombre"]] = Field(
-        None, description="(Opcional) Modo de búsqueda para mercado_valores; el backend usará 'auto'."
+        None, description="(Opcional) Para mercado_valores; el backend usará 'auto'."
     )
     solve: Optional[bool] = Field(
         False, description="(Opcional) Ignorado por el backend; el captcha se resuelve internamente."

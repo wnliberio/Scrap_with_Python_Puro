@@ -1,3 +1,4 @@
+# app/services/executor.py
 from typing import Dict, Any, List
 from time import sleep
 from core.utils.log import log
@@ -8,7 +9,8 @@ from flows.denuncias import process_denuncias
 from flows.mercado_valores import run_mercado_valores
 from flows.interpol import run_interpol_search
 from flows.contraloria_ddjj import run_contraloria_ddjj
-from flows.google_search import run_google_search  
+from flows.google_search import run_google_search 
+from flows.supercias_persona import run_supercias_persona
 
 from app.models.schemas import QueryItem
 from core.config import INTER_ITEM_DELAY_SECONDS
@@ -87,6 +89,14 @@ def run_items(items: List[QueryItem], headless: bool = False) -> Dict[str, Any]:
             # Validación ligera (ya la hace el front y el schema)
             res = run_google_search(valor, headless=headless)
             results["google"] = res
+        
+        elif tipo == "supercias_persona":  # <-- NUEVO
+            # Auto: si 10 dígitos => Identificación; de lo contrario Nombre
+            if valor.isdigit() and len(valor) != 10:
+                results["supercias_persona"] = {"error": "La cédula debe tener exactamente 10 dígitos."}
+            else:
+                res = run_supercias_persona(valor, mode="auto", headless=headless)
+                results["supercias_persona"] = res
 
         else:
             results[tipo] = {"error": f"Tipo no soportado: {tipo}"}
