@@ -1,7 +1,14 @@
+# app/models/schemas.py
 from typing import List, Literal, Optional, Dict, Any
 from pydantic import BaseModel, Field, constr
 
-# Incluye mercado_valores, interpol, google, contraloria, supercias_persona y predio_quito (nuevo)
+# -------- Nuevos modelos para el informe --------
+class InformeMeta(BaseModel):
+    tipo_alerta: Optional[str] = Field(None, description="Tipo de alerta (ej. Venta vehículo, Venta casa)")
+    monto_usd: Optional[float] = Field(None, description="Monto en USD asociado a la alerta")
+    fecha_alerta: Optional[str] = Field(None, description="Fecha ISO-8601 (YYYY-MM-DD) de la alerta")
+
+# Incluye mercado_valores, interpol, google, contraloria, supercias_persona y predios
 TipoItem = Literal[
     "ruc",
     "deudas",
@@ -11,7 +18,7 @@ TipoItem = Literal[
     "google",
     "contraloria",
     "supercias_persona",
-    "predio_quito", 
+    "predio_quito",
     "predio_manta",
 ]
 
@@ -48,6 +55,11 @@ class ConsultasRequest(BaseModel):
     modo: Literal["async"] = Field("async", description="Solo async por ahora")
     headless: bool = Field(False, description="Ejecutar headless (no recomendado por captcha/pyautogui)")
 
+    # --------- NUEVO: metadata y bandera para generar informe/persistir ---------
+    informe_meta: Optional[InformeMeta] = Field(None, description="Metadatos del informe (tipo alerta, monto, fecha)")
+    generate_report: Optional[bool] = Field(False, description="Si es True, se persiste un registro en reports")
+    # ---------------------------------------------------------------------------
+
 class JobCreateResponse(BaseModel):
     job_id: str
     status: Literal["queued", "running", "done", "error"]
@@ -57,4 +69,3 @@ class JobStatusResponse(BaseModel):
     status: Literal["queued", "running", "done", "error"]
     data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
-

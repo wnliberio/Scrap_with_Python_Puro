@@ -1,0 +1,13 @@
+{
+  "job_id": "81fef57ff09546ada3f379c22d7f8582",
+  "results": {
+    "supercias_persona": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_ident_1800587626_20250829_162813_20250829_162813.png"
+    }
+  },
+  "meta": {
+    "tipo_alerta": "Venta vehículo",
+    "monto_usd": 15000.0,
+    "fecha_alerta": "2025-08-16"
+  }
+}

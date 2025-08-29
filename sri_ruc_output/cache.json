@@ -141,9 +141,9 @@
     }
   },
   "supercias_persona:ident:1800587626": {
-    "timestamp": "2025-08-28T12:02:21.745909",
+    "timestamp": "2025-08-29T16:28:18.362207",
     "data": {
-      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_ident_1800587626_20250828_120216_20250828_120217.png"
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_ident_1800587626_20250829_162813_20250829_162813.png"
     }
   },
   "supercias_persona:nombre:VELA VASCO MARCO ANTONIO": {
@@ -159,9 +159,9 @@
     }
   },
   "supercias_persona:ident:2300531528": {
-    "timestamp": "2025-08-28T12:09:02.482520",
+    "timestamp": "2025-08-29T12:32:49.048539",
     "data": {
-      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_ident_2300531528_20250828_120857_20250828_120858.png"
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_ident_2300531528_20250829_123243_20250829_123243.png"
     }
   },
   "predio_quito:VELA VASCO MARCO ANTONIO": {
@@ -193,6 +193,12 @@
       "scenario": "pending",
       "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\predio_quito_detalle_liberio_castillo_willian_nicolas_20250828_153050_20250828_153050.png",
       "screenshot_historial_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\predio_quito_historial_liberio_castillo_willian_nicolas_20250828_153056_20250828_153056.png"
+    }
+  },
+  "supercias_persona:ident:2300531526": {
+    "timestamp": "2025-08-29T15:44:17.355286",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_ident_2300531526_20250829_154412_20250829_154412.png"
     }
   }
 }
