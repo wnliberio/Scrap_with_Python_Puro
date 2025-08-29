@@ -10,14 +10,15 @@ TipoItem = Literal[
     "interpol",
     "google",
     "contraloria",
-    "supercias_persona",   # <-- EXISTENTE
-    "predio_quito",        # <-- NUEVO
+    "supercias_persona",
+    "predio_quito", 
+    "predio_manta",
 ]
 
 class QueryItem(BaseModel):
     tipo: TipoItem = Field(
         ...,
-        description="Tipo de consulta (ruc | deudas | denuncias | mercado_valores | interpol | google | contraloria | supercias_persona | predio_quito)"
+        description="Tipo de consulta (ruc | deudas | denuncias | mercado_valores | interpol | google | contraloria | supercias_persona | predio_quito | predio_manta)"
     )
 
     # Valor principal (se usa para todos los tipos)

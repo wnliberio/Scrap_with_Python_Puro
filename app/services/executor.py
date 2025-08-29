@@ -10,7 +10,8 @@ from flows.interpol import run_interpol_search
 from flows.contraloria_ddjj import run_contraloria_ddjj
 from flows.google_search import run_google_search 
 from flows.supercias_persona import run_supercias_persona
-from flows.predio_quito import run_predio_quito  # <-- NUEVO
+from flows.predio_quito import run_predio_quito
+from flows.predio_manta import run_predio_manta
 
 from app.models.schemas import QueryItem
 from core.config import INTER_ITEM_DELAY_SECONDS
@@ -105,6 +106,10 @@ def run_items(items: List[QueryItem], headless: bool = False) -> Dict[str, Any]:
             else:
                 res = run_predio_quito(valor, headless=headless)
                 results["predio_quito"] = res
+        
+        elif tipo == "predio_manta":
+            # valor puede ser doc (10/13 dígitos o pasaporte) o nombre
+            results["predio_manta"] = run_predio_manta(valor, headless=headless)
 
         else:
             results[tipo] = {"error": f"Tipo no soportado: {tipo}"}

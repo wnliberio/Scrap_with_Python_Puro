@@ -13,7 +13,7 @@ $body = @{
   headless = $false
   } | ConvertTo-Json -Depth 3
 
-                Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/consultas" -Method POST -Headers $headers -Body $body
+                            Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/consultas" -Method POST -Headers $headers -Body $body
 
 - PROBAR SOLO "denuncias" POR CLI EJECUTANDO DESDE BACK
   python main_denuncias.py --nombres "VELA VASCO MARCO ANTONIO"
@@ -28,3 +28,23 @@ Por Nombre: python main_mercadovalores.py -n "CEDEGUIM S.A."
   Por Identificacion: python main_mercadovalores.py -i 1792996325001 --solve
   Por Nombre: python main_mercadovalores.py -n "CEDEGUIM S.A." --solve
   Con código manual captcha: python main_mercadovalores.py -i 1792996325001 --solve --captcha 123ABC
+
+- CÓMO PROBAR (Predio Manta)
+
+  # Ejemplo con Cédula
+
+  python main_predio_manta.py -v 1800587626
+
+  # Ejemplo con Nombre
+
+  python main_predio_manta.py -v "VELA VASCO MARCO ANTONIO"
+
+  # En headless (si tu stack lo permite)
+
+  python main_predio_manta.py -v 1800587626 -H 1
+
+- CÓMO PROBAR (Quito)
+  # Ejemplo con Cédula
+  python main_predio_quito.py -n "VELA VASCO MARCO ANTONIO"
+  # Headless:
+  python main_predio_quito.py -n "VELA VASCO MARCO ANTONIO" -H 1

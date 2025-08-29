@@ -29,3 +29,7 @@ build/
 # Otros archivos temporales
 .DS_Store
 Thumbs.db
+
+# Carpeta del perfil persistente
+chrome-profile/
+
