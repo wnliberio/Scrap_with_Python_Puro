@@ -36,9 +36,9 @@
     }
   },
   "interpol:MACIAS VILLAMAR|": {
-    "timestamp": "2025-08-24T04:54:03.099355",
+    "timestamp": "2025-08-30T21:07:08.778687",
     "data": {
-      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_MACIAS_VILLAMAR_20250824_045400.png"
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\interpol_MACIAS_VILLAMAR_20250830_210706.png"
     }
   },
   "interpol:MACIAS VILLAMAR|JOSE ADOLFO": {
@@ -135,15 +135,15 @@
     }
   },
   "google:VELA VASCO MARCO ANTONIO": {
-    "timestamp": "2025-08-27T23:05:16.422369",
+    "timestamp": "2025-08-30T21:07:42.911483",
     "data": {
-      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\google_VELA_VASCO_MARCO_ANTONIO_20250827_230514.png"
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\google_VELA_VASCO_MARCO_ANTONIO_20250830_210740.png"
     }
   },
   "supercias_persona:ident:1800587626": {
-    "timestamp": "2025-08-29T16:28:18.362207",
+    "timestamp": "2025-08-30T10:58:27.036816",
     "data": {
-      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_ident_1800587626_20250829_162813_20250829_162813.png"
+      "screenshot_path": "C:\\Users\\NICOLAS\\Desktop\\P_mupi\\Scrap_Humanizado_Backend\\sri_ruc_output\\screenshots\\supercias_persona_ident_1800587626_20250830_105824_20250830_105824.png"
     }
   },
   "supercias_persona:nombre:VELA VASCO MARCO ANTONIO": {

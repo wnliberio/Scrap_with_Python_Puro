@@ -1,31 +1,25 @@
 # app/routers/reports.py
-import os
+from __future__ import annotations
+from typing import Optional
 from fastapi import APIRouter, Query, HTTPException
 from fastapi.responses import FileResponse
-from typing import Optional, List, Dict, Any
 
 from app.dbb import list_reports, get_report_path
 
-router = APIRouter(prefix="/reports", tags=["reports"])
+router = APIRouter()
 
-@router.get("", response_model=List[Dict[str, Any]])
-def get_reports(
-    fecha_desde: Optional[str] = Query(None, description="YYYY-MM-DD"),
-    fecha_hasta: Optional[str] = Query(None, description="YYYY-MM-DD"),
+@router.get("/reports")
+def api_list_reports(
+    fecha_desde: Optional[str] = Query(default=None),
+    fecha_hasta: Optional[str] = Query(default=None),
+    only_docx: bool = Query(default=True),
 ):
-    """
-    Lista informes, con filtro opcional por rango de fechas (sobre created_at).
-    """
-    return list_reports(fecha_desde, fecha_hasta)
+    return list_reports(fecha_desde, fecha_hasta, only_docx)
 
-@router.get("/{report_id}/download")
-def download_report(report_id: int):
-    """
-    Descarga un informe DOCX.
-    """
+@router.get("/reports/{report_id}/download")
+def api_download_report(report_id: int):
     path = get_report_path(report_id)
-    if not path or not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="Informe no encontrado")
-    filename = os.path.basename(path)
-    return FileResponse(path, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        filename=filename)
+    if not path:
+        raise HTTPException(status_code=404, detail="report not found")
+    fname = path.replace("\\", "/").split("/")[-1]
+    return FileResponse(path, media_type="application/octet-stream", filename=fname)
