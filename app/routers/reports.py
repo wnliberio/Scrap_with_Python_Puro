@@ -1,25 +1,29 @@
-# app/routers/reports.py
-from __future__ import annotations
-from typing import Optional
-from fastapi import APIRouter, Query, HTTPException
-from fastapi.responses import FileResponse
+# app/routers/reports.py  (añadir al final del archivo)
+from fastapi import APIRouter, HTTPException
+from sqlalchemy import text
+from app.db import engine
 
-from app.dbb import list_reports, get_report_path
+router = APIRouter(prefix="/reports", tags=["reports"])
 
-router = APIRouter()
-
-@router.get("/reports")
-def api_list_reports(
-    fecha_desde: Optional[str] = Query(default=None),
-    fecha_hasta: Optional[str] = Query(default=None),
-    only_docx: bool = Query(default=True),
-):
-    return list_reports(fecha_desde, fecha_hasta, only_docx)
-
-@router.get("/reports/{report_id}/download")
-def api_download_report(report_id: int):
-    path = get_report_path(report_id)
-    if not path:
-        raise HTTPException(status_code=404, detail="report not found")
-    fname = path.replace("\\", "/").split("/")[-1]
-    return FileResponse(path, media_type="application/octet-stream", filename=fname)
+@router.get("/by-job/{job_id}")
+def get_report_by_job(job_id: str):
+    """
+    Retorna el último reporte para un job_id (si existe).
+    """
+    sql = text("""
+        SELECT id, job_id, file_path, created_at
+        FROM reports
+        WHERE job_id = :jid
+        ORDER BY id DESC
+        LIMIT 1
+    """)
+    with engine.connect() as conn:
+        row = conn.execute(sql, {"jid": job_id}).mappings().first()
+        if not row:
+            raise HTTPException(status_code=404, detail="No hay reporte para ese job_id")
+        return {
+            "id": row["id"],
+            "job_id": row["job_id"],
+            "file_path": row["file_path"],
+            "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+        }
