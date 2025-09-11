@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from core.browser import create_driver
 from core.human import human_type
 from core.utils.log import log
-from core.utils.screenshot import save_fullpage_png
+from core.utils.screenshot import save_element_screenshot_png, save_fullpage_png
 from core.io import cache as cache_io
 from core.config import MAX_RETRIES
 
@@ -17,6 +17,9 @@ from core.pages.interpol_page import (
     find_surname_input,
     find_forename_input,
     find_submit_button,
+    detect_search_result_state,
+    find_detail_panel,           # NUEVA
+    find_no_results_section,     # NUEVA
     wait_results_list,
     _pick_anchor_index_by_text,
     hover_and_click_name,
@@ -43,7 +46,7 @@ def process_interpol_once(apellidos_o_full: Optional[str] = "",
                           nombres: Optional[str] = "",
                           headless: bool = False) -> Optional[Dict]:
     """
-    Ejecuta 1 vez la búsqueda y retorna {"screenshot_path": "..."}.
+    Ejecuta 1 vez la búsqueda y retorna {"screenshot_path": "...", "scenario": "..."}.
     """
     apellidos_o_full = (apellidos_o_full or "").strip()
     nombres = (nombres or "").strip()
@@ -77,36 +80,101 @@ def process_interpol_once(apellidos_o_full: Optional[str] = "",
         btn.send_keys(Keys.ENTER)
         time.sleep(random.uniform(0.4, 0.8))
 
-        # Esperar lista
-        if not wait_results_list(driver, timeout=40):
-            log("⏳ INTERPOL: no aparecieron resultados.")
-            return None
+        # NUEVA LÓGICA: Detectar el estado de los resultados
+        search_state = detect_search_result_state(driver, timeout=40)
+        log(f"🔍 INTERPOL: Estado detectado: {search_state}")
 
-        # Elegir mejor match por texto y hacer hover/click
-        wanted_text = f"{apellidos_o_full} {nombres}".strip()
-        idx = _pick_anchor_index_by_text(driver, wanted_text) or 1
+        if search_state == "no_results":
+            # ESCENARIO 2: No hay resultados - capturar sección específica
+            log("📝 INTERPOL: No se encontraron resultados. Tomando captura de sección específica...")
+            _final_settle(driver)
+            
+            # Intentar capturar la sección específica de "no resultados"
+            no_results_element = find_no_results_section(driver, timeout=10)
+            base = "interpol_no_results_" + "_".join([s.replace(" ", "_") for s in [apellidos_o_full, nombres] if s])
+            
+            if no_results_element:
+                try:
+                    abs_path = save_element_screenshot_png(driver, no_results_element, base + "_section")
+                    log(f"📸 INTERPOL (sin resultados - sección): captura guardada en: {abs_path}")
+                except Exception as e:
+                    log(f"⚠️ Error capturando sección específica: {e}. Usando captura completa.")
+                    abs_path = save_fullpage_png(driver, base + "_fullpage")
+                    log(f"📸 INTERPOL (sin resultados - completa): captura guardada en: {abs_path}")
+            else:
+                # Fallback a captura completa si no se encuentra la sección
+                abs_path = save_fullpage_png(driver, base + "_fallback")
+                log(f"📸 INTERPOL (sin resultados - fallback): captura guardada en: {abs_path}")
+            
+            return {
+                "screenshot_path": abs_path,
+                "scenario": "no_results"
+            }
 
-        if not hover_and_click_name(driver, idx):
-            log("⏳ INTERPOL: no se pudo hacer clic sobre el nombre; capturamos la lista.")
-            abs_path = save_fullpage_png(driver, basename="interpol_lista")
-            log(f"📸 INTERPOL (lista): captura guardada en: {abs_path}")
-            return {"screenshot_path": abs_path}
+        elif search_state == "results_found":
+            # ESCENARIO 1: Hay resultados - flujo original
+            log("📝 INTERPOL: Resultados encontrados. Procediendo con selección...")
+            
+            # Elegir mejor match por texto y hacer hover/click
+            wanted_text = f"{apellidos_o_full} {nombres}".strip()
+            idx = _pick_anchor_index_by_text(driver, wanted_text) or 1
 
-        # Esperar panel detalle (con .wantedsingle__colright)
-        if not wait_detail_panel(driver, timeout=45):
-            log("⏳ INTERPOL: no cargó el panel de detalle; capturamos la lista como fallback.")
-            abs_path = save_fullpage_png(driver, basename="interpol_lista")
-            log(f"📸 INTERPOL (lista): captura guardada en: {abs_path}")
-            return {"screenshot_path": abs_path}
+            if not hover_and_click_name(driver, idx):
+                log("⏳ INTERPOL: no se pudo hacer clic sobre el nombre; capturamos la lista.")
+                _final_settle(driver)
+                abs_path = save_fullpage_png(driver, "interpol_lista")
+                log(f"📸 INTERPOL (lista): captura guardada en: {abs_path}")
+                return {
+                    "screenshot_path": abs_path,
+                    "scenario": "list_only"
+                }
 
-        # Settle final para que carguen textos/imagenes/estilos
-        _final_settle(driver)
+            # Esperar panel detalle (con .wantedsingle__colright)
+            if not wait_detail_panel(driver, timeout=45):
+                log("⏳ INTERPOL: no cargó el panel de detalle; capturamos la lista como fallback.")
+                _final_settle(driver)
+                abs_path = save_fullpage_png(driver, "interpol_lista_fallback")
+                log(f"📸 INTERPOL (lista fallback): captura guardada en: {abs_path}")
+                return {
+                    "screenshot_path": abs_path,
+                    "scenario": "list_fallback"
+                }
 
-        # Captura final (única)
-        base = "interpol_" + "_".join([s.replace(" ", "_") for s in [apellidos_o_full, nombres] if s]) or "interpol_detalle"
-        abs_path = save_fullpage_png(driver, basename=base)
-        log(f"📸 INTERPOL: captura final guardada en: {abs_path}")
-        return {"screenshot_path": abs_path}
+            # Settle final para que carguen textos/imagenes/estilos
+            _final_settle(driver)
+
+            # NUEVA LÓGICA: Capturar solo el panel de detalles (#singlePanel)
+            detail_panel = find_detail_panel(driver, timeout=10)
+            base = "interpol_detail_" + "_".join([s.replace(" ", "_") for s in [apellidos_o_full, nombres] if s])
+            
+            if detail_panel:
+                try:
+                    abs_path = save_element_screenshot_png(driver, detail_panel, base + "_panel")
+                    log(f"📸 INTERPOL (detalle - panel): captura guardada en: {abs_path}")
+                except Exception as e:
+                    log(f"⚠️ Error capturando panel específico: {e}. Usando captura completa.")
+                    abs_path = save_fullpage_png(driver, base + "_fullpage")
+                    log(f"📸 INTERPOL (detalle - completa): captura guardada en: {abs_path}")
+            else:
+                # Fallback a captura completa si no se encuentra el panel
+                abs_path = save_fullpage_png(driver, base + "_fallback")
+                log(f"📸 INTERPOL (detalle - fallback): captura guardada en: {abs_path}")
+            
+            return {
+                "screenshot_path": abs_path,
+                "scenario": "detail_found"
+            }
+
+        else:  # timeout
+            log("⏳ INTERPOL: Timeout detectando estado. Tomando captura como fallback...")
+            _final_settle(driver)
+            base = "interpol_timeout_" + "_".join([s.replace(" ", "_") for s in [apellidos_o_full, nombres] if s])
+            abs_path = save_fullpage_png(driver, base)
+            log(f"📸 INTERPOL (timeout): captura guardada en: {abs_path}")
+            return {
+                "screenshot_path": abs_path,
+                "scenario": "timeout"
+            }
 
     finally:
         try:

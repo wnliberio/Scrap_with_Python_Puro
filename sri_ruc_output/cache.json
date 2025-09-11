@@ -36,5 +36,40 @@
     "data": {
       "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\supercias_persona_ident_1703537439_20250908_153351_20250908_153351.png"
     }
+  },
+  "interpol:MACIAS VILLAMAR|JOSE ADOLFO": {
+    "timestamp": "2025-09-11T13:56:04.626496",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\interpol_detail_MACIAS_VILLAMAR_JOSE_ADOLFO_panel_20250911_135558.png",
+      "scenario": "detail_found"
+    }
+  },
+  "interpol:CRIOLLO SAGUINGA|": {
+    "timestamp": "2025-09-11T11:31:27.100706",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\interpol_no_results_CRIOLLO_SAGUINGA_20250911_113121.png",
+      "scenario": "no_results"
+    }
+  },
+  "interpol:LIBERIO CASTILLO|": {
+    "timestamp": "2025-09-11T11:33:47.957428",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\interpol_no_results_LIBERIO_CASTILLO_20250911_113342.png",
+      "scenario": "no_results"
+    }
+  },
+  "interpol:Arias Reyes|": {
+    "timestamp": "2025-09-11T11:42:35.146459",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\interpol_no_results_Arias_Reyes_20250911_114228.png",
+      "scenario": "no_results"
+    }
+  },
+  "interpol:liberio castillo|": {
+    "timestamp": "2025-09-11T13:56:58.962547",
+    "data": {
+      "screenshot_path": "C:\\Users\\willian.liberio\\Desktop\\Screping_Python_Selenium_CapSolver\\Scrap_with_Python_Puro\\sri_ruc_output\\screenshots\\interpol_no_results_liberio_castillo_section_20250911_135652.png",
+      "scenario": "no_results"
+    }
   }
 }
