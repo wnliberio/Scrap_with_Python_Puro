@@ -17,3 +17,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+#Para probar:   
+# Caso CON resultados (Escenario 1)
+#python main_interpol.py -a "MACIAS VILLAMAR" -n "JOSE ADOLFO"
+
+# Caso SIN resultados (Escenario 2)
+#python main_interpol.py -a "CRIOLLO SAGUINGA"  sawe_
