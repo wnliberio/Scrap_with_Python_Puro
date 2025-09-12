@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 
 from core.browser import create_driver
 from core.human import human_type, human_click_element
-from core.utils.screenshot import save_fullpage_png
+from core.utils.screenshot import save_element_screenshot_png, save_fullpage_png  # AGREGAR save_element_screenshot_png
 from core.utils.log import log
 from core.io import cache as cache_io
 from core.config import MAX_RETRIES
@@ -22,6 +22,8 @@ from core.pages.contraloria_ddjj_page import (
     save_captcha_png,
     find_buscar_button,
     wait_results_or_error,
+    wait_for_final_screenshot,
+    find_contraloria_content_section    # NUEVA
 )
 
 from core.ocr.azure_ocr import solve_captcha_with_azure
@@ -83,13 +85,7 @@ def process_contraloria_stage1(cedula: str, headless: bool = False) -> Optional[
 
 def process_contraloria_full(cedula: str, headless: bool = False) -> Optional[Dict]:
     """
-    Etapa 2 completa:
-      - Repite Stage1 (estado fresco) y captura captcha.
-      - Invoca Azure OCR.
-      - Tipea código, clic en Buscar.
-      - Espera resultados.
-      - Captura final única.
-      - Reintenta una vez si el captcha fue rechazado.
+    Etapa 2 completa con captura específica del contenedor principal.
     """
     driver = create_driver(headless=headless)
     try:
@@ -138,14 +134,33 @@ def process_contraloria_full(cedula: str, headless: bool = False) -> Optional[Di
             # Esperar respuesta
             status, msg = wait_results_or_error(driver, timeout=45)
             if status == "ok":
-                fname = f"contraloria_ddjj_{base}_{time.strftime('%Y%m%d_%H%M%S')}"
-                abs_path = save_fullpage_png(driver, basename=fname)
-                log(f"📸 Contraloría: captura final guardada en: {abs_path}")
-                return {"screenshot_path": abs_path}
+                # NUEVA LÓGICA: Capturar elemento específico en lugar de página completa
+                log("📋 Contraloría: Buscando contenedor específico para captura...")
+                content_section = find_contraloria_content_section(driver, timeout=15)
+                
+                if content_section:
+                    try:
+                        log("✅ Contraloría: Contenedor encontrado, capturando elemento específico...")
+                        fname = f"contraloria_ddjj_content_{base}_{time.strftime('%Y%m%d_%H%M%S')}"
+                        abs_path = save_element_screenshot_png(driver, content_section, fname)
+                        log(f"📸 Contraloría (contenido específico): captura guardada en: {abs_path}")
+                        return {"screenshot_path": abs_path, "capture_type": "specific_content"}
+                    except Exception as e:
+                        log(f"⚠️ Contraloría: Error capturando elemento específico: {e}. Usando captura completa.")
+                        fname = f"contraloria_ddjj_{base}_{time.strftime('%Y%m%d_%H%M%S')}"
+                        abs_path = save_fullpage_png(driver, fname)
+                        log(f"📸 Contraloría (completa - fallback): captura guardada en: {abs_path}")
+                        return {"screenshot_path": abs_path, "capture_type": "fullpage_fallback"}
+                else:
+                    log("⚠️ Contraloría: No se encontró contenedor específico, usando captura completa")
+                    fname = f"contraloria_ddjj_{base}_{time.strftime('%Y%m%d_%H%M%S')}"
+                    abs_path = save_fullpage_png(driver, fname)
+                    log(f"📸 Contraloría (completa): captura guardada en: {abs_path}")
+                    return {"screenshot_path": abs_path, "capture_type": "fullpage"}
 
             if status == "captcha_error":
                 log(f"⚠️ Captcha incorrecto (intento {attempt}/2). Recapturando…")
-                # recapturar imagen (suele cambiar sola; si no, re-usa la misma)
+                # recapturar imagen
                 try:
                     img = find_captcha_image(driver, timeout=10)
                     if img:
