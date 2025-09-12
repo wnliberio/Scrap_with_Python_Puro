@@ -197,8 +197,9 @@ def press_enter(el):
 
 # -----------------------------
 # Resultados / errores (post búsqueda)
+# El while se repite hasta que termina el timeout (3 s por defecto en " timeout: int = 3").
 # -----------------------------
-def wait_results_or_error(driver, timeout: int = 40) -> Tuple[str, Optional[str]]:
+def wait_results_or_error(driver, timeout: int = 3) -> Tuple[str, Optional[str]]:
     """
     ('ok', None)               -> tabla/listado completamente cargado (con indicadores de éxito)
     ('captcha_error', mensaje) -> error de captcha
