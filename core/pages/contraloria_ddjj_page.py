@@ -285,3 +285,28 @@ def wait_for_final_screenshot(driver, wait_seconds: float = 3.0) -> None:
     log(f"⏳ Esperando {wait_seconds}s para que se carguen completamente los resultados...")
     time.sleep(wait_seconds)
     log("✅ Espera completada, listo para screenshot final")
+
+def find_contraloria_content_section(driver, timeout: int = 15):
+    """
+    Encuentra la sección específica que contiene todo el contenido de la consulta de Contraloría.
+    XPath: /html/body/div[4]/div[2]/div[2]
+    """
+    try:
+        # Primer intento: XPath exacto
+        return WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.XPATH, "/html/body/div[4]/div[2]/div[2]"))
+        )
+    except TimeoutException:
+        try:
+            # Segundo intento: CSS selector más específico para el contenedor principal
+            return WebDriverWait(driver, timeout).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, ".col-md-12.justify-content-center.align-items-center"))
+            )
+        except TimeoutException:
+            try:
+                # Tercer intento: buscar por el ID del contenedor de declaraciones
+                return WebDriverWait(driver, timeout).until(
+                    EC.presence_of_element_located((By.ID, "divDeclaracionesJuradas"))
+                )
+            except TimeoutException:
+                return None
