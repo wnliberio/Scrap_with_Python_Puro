@@ -82,10 +82,11 @@ def solve_captcha_with_azure(image_path: str, attempts: int = 2, temperature: fl
         {"type": "image_url", "image_url": {"url": data_uri}},
     ]
 
-    log(f"[OCR] Endpoint='{AZ_ENDPOINT}'  Deployment='{AZ_DEPLOYMENT}'  Version='{AZ_API_VERSION}'")
+    #log(f"[OCR] Endpoint='{AZ_ENDPOINT}'  Deployment='{AZ_DEPLOYMENT}'  Version='{AZ_API_VERSION}'")
     for i in range(1, attempts + 1):
         try:
-            log(f"[OCR] Intento {i}/{attempts} → chat.completions.create(model={AZ_DEPLOYMENT})")
+            #log(f"[OCR] Intento {i}/{attempts} → chat.completions.create(model={AZ_DEPLOYMENT})")
+            log(f"[OCR] Intento {i}/{attempts}")
             resp = client.chat.completions.create(
                 model=AZ_DEPLOYMENT,  # IMPORTANTE: aquí va el NOMBRE DEL DEPLOYMENT
                 messages=[
