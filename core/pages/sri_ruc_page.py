@@ -116,6 +116,79 @@ def find_consultar_button(driver, timeout=20):
     log("🔎 Consultar: no se encontró ni con selectores clásicos ni via Shadow DOM")
     return None
 
+# NUEVA FUNCIÓN: Encontrar y hacer clic en el botón adicional
+def find_and_click_detail_button(driver, timeout=20) -> bool:
+    """
+    Encuentra y hace clic en el botón que muestra los detalles completos del contribuyente.
+    XPath: //*[@id="sribody"]/sri-root/div/div[2]/div/div/sri-consulta-ruc-web-app/div/sri-ruta-ruc/div[2]/div[3]/div[1]/div[2]/div/div[4]/button
+    """
+    try:
+        # Intentar con el XPath específico primero
+        button = WebDriverWait(driver, timeout).until(
+            EC.element_to_be_clickable((By.XPATH, "//*[@id='sribody']/sri-root/div/div[2]/div/div/sri-consulta-ruc-web-app/div/sri-ruta-ruc/div[2]/div[3]/div[1]/div[2]/div/div[4]/button"))
+        )
+        
+        log("🔎 RUC: Botón de detalles(Mostrar establecimientos) encontrado con XPath específico")
+        human_click_element(driver, button)
+        time.sleep(random.uniform(1.0, 2.0))  # Esperar a que se carguen los detalles
+        return True
+        
+    except TimeoutException:
+        # Fallback: buscar botones que puedan mostrar más detalles
+        try:
+            # Buscar botones con texto que indique "ver más", "detalles", etc.
+            fallback_selectors = [
+                "//button[contains(text(), 'Ver')]",
+                "//button[contains(text(), 'Detalle')]", 
+                "//button[contains(text(), 'Más')]",
+                "//button[contains(@class, 'btn') and contains(@class, 'cyan')]",
+                "//*[@id='sribody']//button[position()>1]"  # segundo botón o posterior
+            ]
+            
+            for selector in fallback_selectors:
+                try:
+                    buttons = driver.find_elements(By.XPATH, selector)
+                    for btn in buttons:
+                        if btn.is_displayed() and btn.is_enabled():
+                            log(f"🔎 RUC: Usando botón fallback: {selector}")
+                            human_click_element(driver, btn)
+                            time.sleep(random.uniform(1.0, 2.0))
+                            return True
+                except Exception:
+                    continue
+                    
+            log("⚠️ RUC: No se encontró el botón de detalles, continuando sin hacer clic")
+            return False
+            
+        except Exception as e:
+            log(f"⚠️ RUC: Error buscando botón de detalles: {e}")
+            return False
+
+# NUEVA FUNCIÓN: Encontrar la sección de datos del contribuyente
+def find_contributor_data_section(driver, timeout=15):
+    """
+    Encuentra el contenedor principal de toda la consulta de RUC.
+    Usando el selector más amplio para capturar todo el contenido.
+    """
+    try:
+        # Selector principal - toda la aplicación de consulta RUC
+        return WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "sri-consulta-ruc-web-app"))
+        )
+    except TimeoutException:
+        try:
+            # Fallback - contenedor de la ruta
+            return WebDriverWait(driver, timeout).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "sri-ruta-ruc"))
+            )
+        except TimeoutException:
+            try:
+                # Último fallback - div principal dentro de sri-root
+                return WebDriverWait(driver, timeout).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "#sribody sri-root .layout-main"))
+                )
+            except TimeoutException:
+                return None
 def prepare_for_captcha(driver, zoom=1.2):
     try:
         driver.switch_to.default_content()
@@ -166,3 +239,104 @@ def wait_for_results(driver) -> bool:
         return True
     except TimeoutException:
         return False
+
+def detect_ruc_result_state(driver, timeout: int = 30) -> str:
+    """
+    Detecta el estado después de hacer la consulta de RUC.
+    Retorna:
+      - 'results_found' -> hay datos del contribuyente
+      - 'no_results'    -> RUC no encontrado/sin resultados
+      - 'timeout'       -> no se pudo determinar
+    """
+    end = time.time() + timeout
+    
+    while time.time() < end:
+        try:
+            # Verificar elemento específico del mensaje de error
+            error_elements = driver.find_elements(By.CSS_SELECTOR, ".ui-messages-warn, .ui-messages")
+            for el in error_elements:
+                if el.is_displayed():
+                    error_text = (el.text or "").lower()
+                    if "no generó resultados" in error_text:
+                        return "no_results"
+            
+            # También verificar por texto en el body
+            body_text = (driver.execute_script("return document.body.innerText || ''") or "").lower()
+            no_results_indicators = [
+                "la búsqueda no generó resultados",
+                "no generó resultados"
+            ]
+            
+            if any(indicator in body_text for indicator in no_results_indicators):
+                return "no_results"
+            
+            # Verificar si hay datos del contribuyente (indicadores de éxito)
+            success_indicators = [
+                "razón social",
+                "estado contribuyente",
+                "actividad económica",
+                "activo"
+            ]
+            
+            if any(indicator in body_text for indicator in success_indicators):
+                return "results_found"
+            
+            # También verificar elementos específicos de resultados
+            result_elements = driver.find_elements(By.CSS_SELECTOR, "sri-mostrar-contribuyente")
+            if result_elements and any(el.is_displayed() for el in result_elements):
+                return "results_found"
+            
+            time.sleep(0.5)
+            
+        except Exception:
+            time.sleep(0.5)
+    
+    return "timeout"
+
+def find_no_results_section(driver, timeout: int = 10):
+    """
+    Encuentra la sección que contiene el mensaje de "sin resultados" usando el selector exacto.
+    """
+    try:
+        # Selector exacto basado en el HTML proporcionado
+        return WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".ui-messages-warn.ng-star-inserted"))
+        )
+    except TimeoutException:
+        try:
+            # Fallback: cualquier mensaje de warning
+            return WebDriverWait(driver, timeout).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, ".ui-messages-warn"))
+            )
+        except TimeoutException:
+            try:
+                # Fallback más general: cualquier mensaje UI
+                return WebDriverWait(driver, timeout).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".ui-messages"))
+                )
+            except TimeoutException:
+                return None
+
+def find_no_results_section(driver, timeout: int = 10):
+    """
+    Encuentra la sección que contiene el mensaje de "sin resultados"
+    """
+    try:
+        # Buscar el contenedor con el mensaje de error
+        return WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'La búsqueda no generó resultados')]//ancestor::div[contains(@class, 'alert') or contains(@class, 'warning') or position()<=3]"))
+        )
+    except TimeoutException:
+        try:
+            # Fallback: buscar cualquier contenedor de alerta/warning
+            return WebDriverWait(driver, timeout).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, ".alert, .warning, .error, .mensaje"))
+            )
+        except TimeoutException:
+            # Último fallback: el contenedor principal de consulta
+            try:
+                return WebDriverWait(driver, timeout).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "sri-consulta-ruc-web-app"))
+                )
+            except TimeoutException:
+                return None
