@@ -11,6 +11,15 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, Date, Date
 from sqlalchemy.orm import sessionmaker, declarative_base
 from datetime import datetime, date
 
+# app/db/__init__.py
+# Re-exporta para permitir: from app.db import get_session
+from .session import get_session
+
+# (opcional) si quieres exponer también engine/SessionLocal:
+# from .session import engine, SessionLocal
+# __all__ = ("get_session", "engine", "SessionLocal")
+
+
 # --- Zona horaria Ecuador (para created_at) ---
 try:
     import pytz

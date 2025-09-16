@@ -1,12 +1,17 @@
-# app/main.py
+# app/main.py - ACTUALIZADO CON TRACKING
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# Tus routers existentes (NO TOCAR)
 from app.routers.consultas import router as consultas_router
 from app.routers.reports import router as reports_router
-from app.routers.lista import router as lista_router  # <-- NUEVO
+from app.routers.lista import router as lista_router
 
-app = FastAPI(title="Consultas Públicas API")
+# AGREGAR ESTA LÍNEA - NUEVO ROUTER DE TRACKING:
+from app.routers.tracking_professional import router as tracking_router
+
+app = FastAPI(title="Consultas Públicas API - Con Tracking")
+from app.routers.tracking_professional import router as tracking_router
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,12 +20,35 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(tracking_router, prefix="/api")
+# Crear tablas al inicio
+@app.on_event("startup")
+async def create_tables():
+    """Crear tablas de tracking al iniciar"""
+    try:
+        # Solo imprimir mensaje por ahora
+        print("✅ Sistema de tracking inicializado")
+    except Exception as e:
+        print(f"⚠️ Error en startup: {e}")
 
-# Rutas
+# Routers existentes (NO TOCAR)
 app.include_router(consultas_router, prefix="/api")
-app.include_router(reports_router,   prefix="/api")
-app.include_router(lista_router,     prefix="/api")  # <-- NUEVO
+app.include_router(reports_router, prefix="/api")
+app.include_router(lista_router, prefix="/api")
+
+# AGREGAR ESTA LÍNEA - INCLUIR EL ROUTER DE TRACKING:
+app.include_router(tracking_router, prefix="/api")
 
 @app.get("/")
 def root():
-    return {"ok": True, "service": "Consultas Públicas API"}
+    return {
+        "ok": True, 
+        "service": "Consultas Públicas API", 
+        "tracking": "disponible en /api/tracking/*",
+        "endpoints": [
+            "/api/consultas",
+            "/api/reports", 
+            "/api/lista",
+            "/api/tracking"
+        ]
+    }
