@@ -388,6 +388,8 @@ def descargar_reporte_proceso(proceso_id: int) -> FileResponse:
             detail=f"Error interno descargando reporte: {str(e)}"
         )
 
+# REEMPLAZAR la función listar_reportes_tracking en app/routers/tracking_professional.py
+
 @router.get("/reportes", summary="Listar todos los reportes disponibles")
 def listar_reportes_tracking(
     cliente_id: Optional[int] = Query(None, description="Filtrar por cliente"),
@@ -411,19 +413,21 @@ def listar_reportes_tracking(
             if cliente_id:
                 query = query.filter(DeReporte.cliente_id == cliente_id)
             
-            if fecha_desde:
+            # FIX: Verificar que fecha_desde sea string válido
+            if fecha_desde and isinstance(fecha_desde, str) and fecha_desde.strip():
                 try:
-                    fecha_desde_dt = datetime.strptime(fecha_desde, "%Y-%m-%d")
+                    fecha_desde_dt = datetime.strptime(fecha_desde.strip(), "%Y-%m-%d")
                     query = query.filter(DeReporte.fecha_generacion >= fecha_desde_dt)
-                except ValueError:
-                    pass  # Ignorar fecha inválida
+                except ValueError as e:
+                    print(f"⚠️ Fecha desde inválida ignorada: {fecha_desde} - {e}")
             
-            if fecha_hasta:
+            # FIX: Verificar que fecha_hasta sea string válido
+            if fecha_hasta and isinstance(fecha_hasta, str) and fecha_hasta.strip():
                 try:
-                    fecha_hasta_dt = datetime.strptime(fecha_hasta, "%Y-%m-%d")
+                    fecha_hasta_dt = datetime.strptime(fecha_hasta.strip(), "%Y-%m-%d")
                     query = query.filter(DeReporte.fecha_generacion <= fecha_hasta_dt)
-                except ValueError:
-                    pass  # Ignorar fecha inválida
+                except ValueError as e:
+                    print(f"⚠️ Fecha hasta inválida ignorada: {fecha_hasta} - {e}")
             
             if solo_exitosos:
                 query = query.filter(DeReporte.generado_exitosamente == True)
@@ -463,6 +467,7 @@ def listar_reportes_tracking(
                     'archivo_existe': archivo_existe
                 })
             
+            print(f"✅ Reportes listados correctamente: {len(resultado)} encontrados")
             return resultado
             
         finally:
@@ -470,6 +475,8 @@ def listar_reportes_tracking(
             
     except Exception as e:
         print(f"❌ Error listando reportes: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error listando reportes: {str(e)}")
 
 @router.get("/clientes/{cliente_id}/reportes", summary="Obtener reportes de un cliente específico")
