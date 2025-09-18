@@ -63,7 +63,7 @@ except ImportError as e:
 @app.on_event("startup")
 async def startup_event():
     """Inicialización del sistema al arrancar"""
-    print("🚀 Iniciando Sistema de Consultas v2.0")
+    print("🚀 Iniciando Sistema de Consultas v1.0")
     
     # Verificar conexión a base de datos
     try:

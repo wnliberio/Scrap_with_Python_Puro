@@ -53,7 +53,8 @@ def _short_analysis(tipo: str, payload: Dict[str, Any], monto: Optional[float]) 
     if scen:
         base += f"Escenario detectado: {scen}. "
     if monto:
-        base += f"Análisis en relación al monto USD {monto:,.2f}. "
+        base += f""
+        #base += f"Análisis en relación al monto USD {monto:,.2f}. "
     return base.strip()
 
 
@@ -66,17 +67,17 @@ def build_docx_report(job_id: str, results: Dict[str, Any], meta: Dict[str, Any]
     doc = Document()
 
     # Portada
-    _add_heading_center(doc, "Informe de Verificación", level=0)
+    _add_heading_center(doc, "CONSULTA DE PROCESOS JUDICIALES ELECTRÓNICOS", level=0)
     p = doc.add_paragraph()
     p.paragraph_format.space_after = Inches(0.2)
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.add_run(f"Tipo de alerta: {tipo_alerta}\n").bold = True
-    if monto_usd is not None:
-        p.add_run(f"Monto (USD): {monto_usd:,.2f}\n")
-    if fecha_alerta:
-        p.add_run(f"Fecha de alerta: {fecha_alerta}\n")
-    p.add_run(f"Job ID: {job_id}\n")
-    p.add_run(f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    #p.add_run(f"Tipo de alerta: {tipo_alerta}\n").bold = True
+    #if monto_usd is not None:
+    #    p.add_run(f"Monto (USD): {monto_usd:,.2f}\n")
+    #if fecha_alerta:
+    #    p.add_run(f"Fecha de alerta: {fecha_alerta}\n")
+    #p.add_run(f"Job ID: {job_id}\n")
+    #p.add_run(f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     doc.add_page_break()
 
@@ -93,19 +94,16 @@ def build_docx_report(job_id: str, results: Dict[str, Any], meta: Dict[str, Any]
             _add_image(doc, payload["screenshot_path"])
 
         if isinstance(payload, dict) and payload.get("screenshot_historial_path"):
-            doc.add_paragraph("Historial:")
+            doc.add_paragraph("--")
             _add_image(doc, payload["screenshot_historial_path"])
 
         doc.add_page_break()
 
     # Conclusión
-    doc.add_heading("Conclusión", level=1)
+    doc.add_heading("Advertencia", level=1)
     concl = doc.add_paragraph()
     concl.add_run(
-        "Considerando las evidencias de cada consulta y el monto transaccionado, "
-        "no se observaron discrepancias evidentes que contradigan el escenario de la alerta. "
-        "Se recomienda conservar este informe como respaldo y, de ser necesario, "
-        "complementar con fuentes adicionales."
+        "Este documento se ha generado automáticamente. Por favor, revisarlo."
     )
 
     path = os.path.join(REPORTS_DIR, f"report_{job_id}.docx")

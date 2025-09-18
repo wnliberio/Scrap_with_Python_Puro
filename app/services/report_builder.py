@@ -109,10 +109,10 @@ def build_report_docx(job_id: str, meta: Dict[str, Any], results: Dict[str, Any]
     _set_doc_defaults(doc)
 
     # Portada / Encabezado
-    _add_title(doc, "Informe de Verificación")
-    tipo_alerta = str(meta.get("tipo_alerta", "General"))
-    monto = meta.get("monto_usd", None)
-    fecha_alerta = meta.get("fecha_alerta")
+    _add_title(doc, "CONSULTA DE PROCESOS JUDICIALES ELECTRÓNICOS")
+    #tipo_alerta = str(meta.get("tipo_alerta", "General"))
+    #monto = meta.get("monto_usd", None)
+    #fecha_alerta = meta.get("fecha_alerta")
 
     # Normalizar fecha
     if isinstance(fecha_alerta, str):
@@ -126,7 +126,7 @@ def build_report_docx(job_id: str, meta: Dict[str, Any], results: Dict[str, Any]
         doc.add_paragraph(f"Monto (USD): {_format_money(monto)}")
     if fecha_alerta:
         doc.add_paragraph(f"Fecha de la alerta: {fecha_alerta.isoformat()}")
-    doc.add_paragraph(f"Job ID: {job_id}")
+    #doc.add_paragraph(f"Job ID: {job_id}")
     doc.add_paragraph(f"Fecha de generación: {datetime.now().isoformat(sep=' ', timespec='seconds')}")
 
     doc.add_paragraph("")  # espacio

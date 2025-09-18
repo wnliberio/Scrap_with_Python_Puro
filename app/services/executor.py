@@ -13,7 +13,7 @@ from flows.google_search import run_google_search
 from flows.supercias_persona import run_supercias_persona
 from flows.predio_quito import run_predio_quito
 from flows.predio_manta import run_predio_manta
-from flows.funcion_judicial import process_funcion_judicial  # ✅ AGREGADO
+from flows.funcion_judicial import process_funcion_judicial 
 
 from app.models.schemas import QueryItem
 from core.config import INTER_ITEM_DELAY_SECONDS
