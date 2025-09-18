@@ -92,6 +92,7 @@ def _human_name(tipo: str) -> str:
         "supercias_persona": "Superintendencia – Consulta de Persona",
         "predio_quito": "GAD Quito – Predios",
         "predio_manta": "GAD Manta – Predios",
+        "funcion_judicial": "Función Judicial – Procesos Judiciales",
     }
     return mapping.get(tipo, tipo)
 

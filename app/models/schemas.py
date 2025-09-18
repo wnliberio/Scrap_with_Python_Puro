@@ -8,7 +8,7 @@ class InformeMeta(BaseModel):
     monto_usd: Optional[float] = Field(None, description="Monto en USD asociado a la alerta")
     fecha_alerta: Optional[str] = Field(None, description="Fecha ISO-8601 (YYYY-MM-DD) de la alerta")
 
-# Incluye mercado_valores, interpol, google, contraloria, supercias_persona y predios
+# Incluye todas las páginas + funcion_judicial
 TipoItem = Literal[
     "ruc",
     "deudas",
@@ -20,12 +20,13 @@ TipoItem = Literal[
     "supercias_persona",
     "predio_quito",
     "predio_manta",
+    "funcion_judicial",
 ]
 
 class QueryItem(BaseModel):
     tipo: TipoItem = Field(
         ...,
-        description="Tipo de consulta (ruc | deudas | denuncias | mercado_valores | interpol | google | contraloria | supercias_persona | predio_quito | predio_manta)"
+        description="Tipo de consulta (ruc | deudas | denuncias | mercado_valores | interpol | google | contraloria | supercias_persona | predio_quito | predio_manta | funcion_judicial)"
     )
 
     # Valor principal (se usa para todos los tipos)
@@ -50,22 +51,34 @@ class QueryItem(BaseModel):
         False, description="(Opcional) Ignorado por el backend; el captcha se resuelve internamente."
     )
 
-class ConsultasRequest(BaseModel):
-    items: List[QueryItem] = Field(..., description="Lista de consultas a ejecutar en secuencia")
-    modo: Literal["async"] = Field("async", description="Solo async por ahora")
-    headless: bool = Field(False, description="Ejecutar headless (no recomendado por captcha/pyautogui)")
-
-    # --------- NUEVO: metadata y bandera para generar informe/persistir ---------
-    informe_meta: Optional[InformeMeta] = Field(None, description="Metadatos del informe (tipo alerta, monto, fecha)")
-    generate_report: Optional[bool] = Field(False, description="Si es True, se persiste un registro en reports")
-    # ---------------------------------------------------------------------------
-
-class JobCreateResponse(BaseModel):
-    job_id: str
-    status: Literal["queued", "running", "done", "error"]
+class ConsultasBody(BaseModel):
+    """
+    Modelo principal para iniciar un proceso de consultas.
+    """
+    items: List[QueryItem] = Field(
+        ..., 
+        min_length=1, 
+        max_length=50,
+        description="Lista de consultas a ejecutar (máximo 50)"
+    )
+    
+    # Configuración de ejecución
+    headless: bool = Field(
+        default=True, 
+        description="Ejecutar en modo headless (sin interfaz gráfica). False útil para debugging."
+    )
+    
+    # Metadatos del informe/proceso
+    meta: Optional[InformeMeta] = Field(
+        None, 
+        description="Metadatos opcionales para el informe final"
+    )
 
 class JobStatusResponse(BaseModel):
+    """
+    Respuesta del estado de un job/proceso.
+    """
     job_id: str
-    status: Literal["queued", "running", "done", "error"]
+    status: Literal["queued", "running", "completed", "error", "not_found"]
     data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None

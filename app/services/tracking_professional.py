@@ -305,7 +305,8 @@ def _obtener_valor_para_pagina(cliente: DeCliente, codigo_pagina: str) -> Option
         'contraloria': cliente.ci,
         'supercias_persona': cliente.ci,
         'predio_quito': cliente.ci,
-        'predio_manta': cliente.ci
+        'predio_manta': cliente.ci,
+        'funcion_judicial': f"{cliente.apellido} {cliente.nombre}".strip()
     }
     
     return mapeo_valores.get(codigo_pagina)

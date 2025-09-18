@@ -109,6 +109,9 @@ def actualizar_estado_cliente(
 
 # ===== FUNCIÓN HELPER PARA CONVERTIR A QueryItem =====
 
+# FRAGMENTO DE app/routers/tracking_professional.py
+# SOLO LA FUNCIÓN _convertir_a_query_items QUE NECESITA SER ARREGLADA
+
 def _convertir_a_query_items(cliente_data: Dict[str, Any], paginas_codigos: List[str]) -> List[Dict[str, Any]]:
     """
     Convierte los códigos de páginas en QueryItems compatibles con el executor existente.
@@ -134,8 +137,8 @@ def _convertir_a_query_items(cliente_data: Dict[str, Any], paginas_codigos: List
                 valor = cliente.ruc
             elif codigo in ['contraloria', 'supercias_persona', 'predio_quito', 'predio_manta']:
                 valor = cliente.ci
-            elif codigo in ['denuncias', 'google']:
-                valor = f"{cliente.nombre} {cliente.apellido}".strip()
+            elif codigo in ['denuncias', 'google', 'funcion_judicial']:  # ✅ AGREGADO funcion_judicial
+                valor = f"{cliente.apellido} {cliente.nombre}".strip()
             elif codigo == 'interpol':
                 valor = cliente.apellido
                 apellidos = cliente.apellido

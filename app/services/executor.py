@@ -1,3 +1,4 @@
+# app/services/executor.py
 from typing import Dict, Any, List
 from time import sleep
 from core.utils.log import log
@@ -12,6 +13,7 @@ from flows.google_search import run_google_search
 from flows.supercias_persona import run_supercias_persona
 from flows.predio_quito import run_predio_quito
 from flows.predio_manta import run_predio_manta
+from flows.funcion_judicial import process_funcion_judicial  # ✅ AGREGADO
 
 from app.models.schemas import QueryItem
 from core.config import INTER_ITEM_DELAY_SECONDS
@@ -76,46 +78,62 @@ def run_items(items: List[QueryItem], headless: bool = False) -> Dict[str, Any]:
             if not ap and not no:
                 results["interpol"] = {"error": "INTERPOL: ingresa al menos Apellidos o Nombres."}
             else:
-                res = run_interpol_search(apellidos_o_full=ap, nombres=no, headless=headless)
+                res = run_interpol_search(ap, no, headless=headless)
                 results["interpol"] = res
 
-        elif tipo == "contraloria":  # EXISTENTE
-            if not (valor.isdigit() and len(valor) == 10):
-                results["contraloria"] = {"error": "Cédula inválida: deben ser exactamente 10 dígitos."}
-            else:
-                res = run_contraloria_ddjj(cedula=valor, solve=True, headless=headless)
-                results["contraloria"] = res
-        
-        elif tipo == "google":  # EXISTENTE
-            # Validación ligera (ya la hace el front y el schema)
+        elif tipo == "google":
+            # Buscar en Google por nombres.
             res = run_google_search(valor, headless=headless)
             results["google"] = res
-        
-        elif tipo == "supercias_persona":  # EXISTENTE
-            # Auto: si 10 dígitos => Identificación; de lo contrario Nombre
-            if valor.isdigit() and len(valor) != 10:
-                results["supercias_persona"] = {"error": "La cédula debe tener exactamente 10 dígitos."}
-            else:
-                res = run_supercias_persona(valor, mode="auto", headless=headless)
-                results["supercias_persona"] = res
 
-        elif tipo == "predio_quito":  # <-- NUEVO
-            # Se espera Apellidos y Nombres (mín. 3 chars)
-            if len(valor) < 3:
-                results["predio_quito"] = {"error": "Predio Quito: ingresa Apellidos y Nombres válidos."}
+        elif tipo == "contraloria":
+            # CI 10 dígitos.
+            if valor.isdigit() and len(valor) == 10:
+                res = run_contraloria_ddjj(valor, headless=headless)
+                results["contraloria"] = res
             else:
+                results["contraloria"] = {"error": "Contraloría: la cédula debe tener exactamente 10 dígitos."}
+
+        elif tipo == "supercias_persona":
+            # CI 10 dígitos.
+            if valor.isdigit() and len(valor) == 10:
+                res = run_supercias_persona(valor, headless=headless)
+                results["supercias_persona"] = res
+            else:
+                results["supercias_persona"] = {"error": "Supercias Persona: la cédula debe tener exactamente 10 dígitos."}
+
+        elif tipo == "predio_quito":
+            # CI 10 dígitos.
+            if valor.isdigit() and len(valor) == 10:
                 res = run_predio_quito(valor, headless=headless)
                 results["predio_quito"] = res
-        
+            else:
+                results["predio_quito"] = {"error": "Predio Quito: la cédula debe tener exactamente 10 dígitos."}
+
         elif tipo == "predio_manta":
-            # valor puede ser doc (10/13 dígitos o pasaporte) o nombre
-            results["predio_manta"] = run_predio_manta(valor, headless=headless)
+            # CI 10 dígitos.
+            if valor.isdigit() and len(valor) == 10:
+                res = run_predio_manta(valor, headless=headless)
+                results["predio_manta"] = res
+            else:
+                results["predio_manta"] = {"error": "Predio Manta: la cédula debe tener exactamente 10 dígitos."}
+
+        # ✅ AGREGADO: FUNCIÓN JUDICIAL
+        elif tipo == "funcion_judicial":
+            # Función Judicial usa apellidos y nombres completos
+            if len(valor.strip()) < 3:
+                results["funcion_judicial"] = {"error": "Función Judicial: debe proporcionar apellidos y nombres (mínimo 3 caracteres)."}
+            else:
+                res = process_funcion_judicial(valor, headless=headless)
+                results["funcion_judicial"] = res
 
         else:
-            results[tipo] = {"error": f"Tipo no soportado: {tipo}"}
+            log(f"⚠️ Tipo no reconocido: {tipo}")
+            results[tipo] = {"error": f"Tipo de consulta no reconocido: {tipo}"}
 
+        # Pausa entre items
         if index < len(items):
-            log(f"⏳ Esperando {INTER_ITEM_DELAY_SECONDS}s antes del siguiente item…")
+            log(f"⏳ Pausa de {INTER_ITEM_DELAY_SECONDS}s antes del siguiente item...")
             sleep(INTER_ITEM_DELAY_SECONDS)
 
     return results
