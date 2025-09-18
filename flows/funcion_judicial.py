@@ -63,7 +63,7 @@ def _scroll_element_step(driver, element, delta: int) -> int:
 
 def _scroll_window_to(driver, y: int):
     try:
-        driver.execute_script("window.scrollTo(0, totalHeight + 200);")
+        driver.execute_script("window.scrollTo(0, arguments[0]);", y)
     except JavascriptException:
         pass
 
@@ -346,25 +346,64 @@ def process_funcion_judicial_once(apellidos_nombres: str, headless: bool = False
             else:
                 log(f"⏳ Sin cambios después del clic #{click_num}, continuando...")
 
-        # 6. Si hay resultados, esperar y capturar sección específica
-        if detect_results_loaded(driver):
-            log("⏳ Esperando carga completa para captura específica...")
-            _wait(driver, random.uniform(3.0, 5.0))
-
-        # 7. Capturar específicamente la sección de resultados
-        screenshot_1 = capture_results_section(
-            driver, 
-            f"funcion_judicial_{_slug(apellidos_nombres)}_resultados"
-        )
-        screenshots_paths.append(screenshot_1)
-        log(f"📸 Screenshot de resultados guardado: {screenshot_1}")
-
-        # 8. Si NO hay resultados, terminar aquí
+        # 6. Verificar si hay resultados o no
+        _wait(driver, 2.0)  # Esperar un poco después de los clics
+        
         if detect_no_results(driver):
-            log("ℹ️ Consulta sin resultados, finalizando")
+            log("ℹ️ Sin resultados detectados, capturando modal...")
+            screenshot_sin_resultados = capture_no_results_modal(
+                driver, 
+                f"funcion_judicial_{_slug(apellidos_nombres)}"
+            )
+            screenshots_paths.append(screenshot_sin_resultados)
+            log(f"📸 Screenshot sin resultados guardado: {screenshot_sin_resultados}")
+            
             return {
                 "screenshot_path": screenshots_paths[0] if screenshots_paths else None,
+                "scenario": "no_results"
             }
+
+        # 7. Si hay resultados, procesar todas las páginas
+        if detect_results_loaded(driver):
+            total_pages = detect_total_pages(driver)
+            log(f"📊 Procesando {total_pages} páginas de resultados...")
+            
+            # Capturar cada página
+            for page_num in range(1, total_pages + 1):
+                log(f"📸 Capturando página {page_num}/{total_pages}...")
+                
+                if page_num == 1:
+                    # Ya estamos en página 1, solo capturar
+                    _wait(driver, 2.0)
+                else:
+                    # Navegar a la siguiente página
+                    if not navigate_to_page(driver, page_num):
+                        log(f"⚠️ No se pudo navegar a página {page_num}, terminando paginación")
+                        break
+                
+                # Capturar página actual
+                screenshot_page = capture_results_section(
+                    driver, 
+                    f"funcion_judicial_{_slug(apellidos_nombres)}_page{page_num}"
+                )
+                screenshots_paths.append(screenshot_page)
+                log(f"📸 Screenshot página {page_num} guardado: {screenshot_page}")
+
+        # 8. Resultado final con todas las páginas
+        resultado = {
+            "screenshot_path": screenshots_paths[0] if screenshots_paths else None,
+            "scenario": "results_found"
+        }
+        
+        # Agregar páginas adicionales como historial
+        if len(screenshots_paths) > 1:
+            resultado["screenshot_historial_path"] = screenshots_paths[1]
+            log(f"✅ Segunda página agregada: {screenshots_paths[1]}")
+            
+            # Si hay más de 2 páginas, podrías agregar un campo adicional
+            if len(screenshots_paths) > 2:
+                resultado["screenshots_adicionales"] = screenshots_paths[2:]
+                log(f"✅ {len(screenshots_paths)-2} páginas adicionales encontradas")
 
         # 9. Para segunda página (si existe), hacer lo mismo
         if detect_results_loaded(driver):
@@ -579,6 +618,106 @@ def wait_for_all_results_loaded(driver, timeout: int = 20):
     except Exception as e:
         log(f"❌ Error en wait_for_all_results_loaded: {e}")
         return False
+    
+def detect_total_pages(driver) -> int:
+    """Detecta el número total de páginas en los resultados"""
+    try:
+        page_text = driver.execute_script("return document.body.innerText || ''").lower()
+        
+        # Buscar patrón "página x de y"
+        import re
+        match = re.search(r'página\s+\d+\s+de\s+(\d+)', page_text)
+        if match:
+            total_pages = int(match.group(1))
+            log(f"📊 Total de páginas detectadas: {total_pages}")
+            return total_pages
+        
+        # Si no encuentra el patrón, asumir 1 página
+        log("📊 No se detectó paginación, asumiendo 1 página")
+        return 1
+        
+    except Exception as e:
+        log(f"⚠️ Error detectando páginas totales: {e}")
+        return 1
+
+def capture_no_results_modal(driver, basename: str):
+    """Captura el modal de 'sin resultados'"""
+    try:
+        # Esperar a que aparezca el modal
+        modal_selectors = [
+            ".mat-mdc-snack-bar-container",
+            ".mat-snack-bar-container", 
+            "[role='alert']",
+            ".toast",
+            ".notification"
+        ]
+        
+        modal_element = None
+        for selector in modal_selectors:
+            try:
+                modal_element = WebDriverWait(driver, 3).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                )
+                if modal_element and modal_element.is_displayed():
+                    break
+            except TimeoutException:
+                continue
+        
+        if modal_element:
+            log("✅ Modal de sin resultados encontrado")
+            # Screenshot del modal específico
+            return save_element_screenshot_png(driver, modal_element, basename + "_sin_resultados")
+        else:
+            log("📸 Modal no encontrado, capturando pantalla completa")
+            # Fallback: screenshot completo
+            return save_fullpage_png(driver, basename + "_sin_resultados")
+            
+    except Exception as e:
+        log(f"⚠️ Error capturando modal: {e}")
+        return save_fullpage_png(driver, basename + "_sin_resultados")
+
+def navigate_to_page(driver, page_number: int) -> bool:
+    """Navega a una página específica"""
+    try:
+        # Buscar botón de página específica o botón siguiente
+        page_selectors = [
+            f"button[aria-label*='{page_number}']",
+            f"button:contains('{page_number}')",
+            ".mat-mdc-paginator-navigation-next"
+        ]
+        
+        for selector in page_selectors:
+            try:
+                if selector == ".mat-mdc-paginator-navigation-next":
+                    # Para botón siguiente
+                    next_btn = WebDriverWait(driver, 5).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+                    )
+                    if next_btn and next_btn.is_enabled():
+                        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", next_btn)
+                        _wait(driver, 1.0)
+                        human_click_element(driver, next_btn)
+                        _wait(driver, random.uniform(3.0, 5.0))
+                        return True
+                else:
+                    # Para botón de página específica
+                    page_btn = WebDriverWait(driver, 3).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+                    )
+                    if page_btn:
+                        human_click_element(driver, page_btn)
+                        _wait(driver, random.uniform(3.0, 5.0))
+                        return True
+            except TimeoutException:
+                continue
+        
+        log(f"⚠️ No se pudo navegar a página {page_number}")
+        return False
+        
+    except Exception as e:
+        log(f"❌ Error navegando a página {page_number}: {e}")
+        return False
+    
 # Función de prueba independiente (para testing)
 if __name__ == "__main__":
     print("=== PRUEBA FUNCIÓN JUDICIAL ===")
