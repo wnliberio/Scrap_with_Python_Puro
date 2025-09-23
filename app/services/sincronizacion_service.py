@@ -255,7 +255,7 @@ class SincronizadorConReportes:
             
             print(f"📄 Reporte generado: {reporte_info}")
             
-            # Crear registro en de_reportes para el nuevo sistema
+            # Crear registro en de_reportes_rpa para el nuevo sistema
             if reporte_info and 'report_path' in reporte_info:
                 ruta_reporte = reporte_info['report_path']
                 nombre_archivo = os.path.basename(ruta_reporte)
@@ -284,7 +284,7 @@ class SincronizadorConReportes:
                 db.add(nuevo_reporte)
                 db.flush()
                 
-                print(f"✅ Registro de reporte creado en de_reportes: ID {nuevo_reporte.id}")
+                print(f"✅ Registro de reporte creado en de_reportes_rpa: ID {nuevo_reporte.id}")
                 
         except Exception as e:
             print(f"❌ Error generando reporte real: {str(e)}")

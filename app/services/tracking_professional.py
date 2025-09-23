@@ -1,7 +1,6 @@
 # app/services/tracking_professional.py
 """
 Servicio profesional de tracking que usa la infraestructura existente.
-Compatible con las tablas y modelos que ya tienes implementados.
 """
 
 from typing import List, Dict, Any, Optional

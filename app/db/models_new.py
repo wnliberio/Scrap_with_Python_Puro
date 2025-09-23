@@ -8,12 +8,12 @@ from sqlalchemy import Integer, String, Text, Boolean, ForeignKey, JSON, DateTim
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.mysql import ENUM
 
-# Usar tu Base existente
+# 
 from app.db import Base
 
 class DeCliente(Base):
-    """Modelo para de_clientes (evolución de de_lista)"""
-    __tablename__ = "de_clientes"
+    """Modelo para de_clientes_rpa (evolución de de_lista)"""
+    __tablename__ = "de_clientes_rpa"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nombre: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
@@ -35,8 +35,8 @@ class DeCliente(Base):
     reportes: Mapped[List["DeReporte"]] = relationship("DeReporte", back_populates="cliente")
 
 class DePagina(Base):
-    """Modelo para de_paginas (catálogo de páginas consultables)"""
-    __tablename__ = "de_paginas"
+    """Modelo para de_paginas_rpa (catálogo de páginas consultables)"""
+    __tablename__ = "de_paginas_rpa"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -51,11 +51,11 @@ class DePagina(Base):
     consultas: Mapped[List["DeConsulta"]] = relationship("DeConsulta", back_populates="pagina")
 
 class DeProceso(Base):
-    """Modelo para de_procesos (jobs/flujos completos)"""
-    __tablename__ = "de_procesos"
+    """Modelo para de_procesos_rpa (jobs/flujos completos)"""
+    __tablename__ = "de_procesos_rpa"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    cliente_id: Mapped[int] = mapped_column(Integer, ForeignKey("de_clientes.id"), nullable=False, index=True)
+    cliente_id: Mapped[int] = mapped_column(Integer, ForeignKey("de_clientes_rpa.id"), nullable=False, index=True)
     
     # Identificadores
     job_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, unique=True, index=True)
@@ -94,12 +94,12 @@ class DeProceso(Base):
     reportes: Mapped[List["DeReporte"]] = relationship("DeReporte", back_populates="proceso")
 
 class DeConsulta(Base):
-    """Modelo para de_consultas (consultas individuales por página)"""
-    __tablename__ = "de_consultas"
+    """Modelo para de_consultas_rpa (consultas individuales por página)"""
+    __tablename__ = "de_consultas_rpa"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    proceso_id: Mapped[int] = mapped_column(Integer, ForeignKey("de_procesos.id"), nullable=False, index=True)
-    pagina_id: Mapped[int] = mapped_column(Integer, ForeignKey("de_paginas.id"), nullable=False, index=True)
+    proceso_id: Mapped[int] = mapped_column(Integer, ForeignKey("de_procesos_rpa.id"), nullable=False, index=True)
+    pagina_id: Mapped[int] = mapped_column(Integer, ForeignKey("de_paginas_rpa.id"), nullable=False, index=True)
     
     # Datos enviados
     valor_enviado: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
@@ -132,12 +132,12 @@ class DeConsulta(Base):
     pagina: Mapped["DePagina"] = relationship("DePagina", back_populates="consultas")
 
 class DeReporte(Base):
-    """Modelo para de_reportes (reportes generados)"""
-    __tablename__ = "de_reportes"
+    """Modelo para de_reportes_rpa (reportes generados)"""
+    __tablename__ = "de_reportes_rpa"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    proceso_id: Mapped[int] = mapped_column(Integer, ForeignKey("de_procesos.id"), nullable=False, index=True)
-    cliente_id: Mapped[int] = mapped_column(Integer, ForeignKey("de_clientes.id"), nullable=False, index=True)
+    proceso_id: Mapped[int] = mapped_column(Integer, ForeignKey("de_procesos_rpa.id"), nullable=False, index=True)
+    cliente_id: Mapped[int] = mapped_column(Integer, ForeignKey("de_clientes_rpa.id"), nullable=False, index=True)
     
     # Metadatos del proceso
     tipo_alerta: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)

@@ -19,7 +19,7 @@ router = APIRouter(prefix="/tracking", tags=["tracking"])
 # ===== MODELOS DE REQUEST =====
 
 class IniciarProcesoRequest(BaseModel):
-    cliente_id: int = Field(..., description="ID del cliente en de_clientes")
+    cliente_id: int = Field(..., description="ID del cliente en de_clientes_rpa")
     paginas_codigos: List[str] = Field(..., min_items=1, description="Códigos de páginas a consultar")
     headless: bool = Field(False, description="Ejecutar en modo headless")
     generate_report: bool = Field(True, description="Generar reporte al finalizar")
@@ -42,7 +42,7 @@ def health_check() -> Dict[str, Any]:
             "message": "Sistema de tracking funcionando correctamente",
             "timestamp": datetime.now().isoformat(),
             "paginas_disponibles": len(paginas),
-            "tablas_verificadas": ["de_clientes", "de_paginas", "de_procesos", "de_consultas"]
+            "tablas_verificadas": ["de_clientes_rpa", "de_paginas_rpa", "de_procesos_rpa", "de_consultas_rpa"]
         }
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Sistema no saludable: {str(e)}")
