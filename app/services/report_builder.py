@@ -109,7 +109,7 @@ def build_report_docx(job_id: str, meta: Dict[str, Any], results: Dict[str, Any]
     _set_doc_defaults(doc)
 
     # Portada / Encabezado
-    _add_title(doc, "CONSULTA DE PROCESOS JUDICIALES ELECTRÓNICOS")
+    _add_title(doc, "Revisión de Función Judicial")
     #tipo_alerta = str(meta.get("tipo_alerta", "General"))
     #monto = meta.get("monto_usd", None)
     #fecha_alerta = meta.get("fecha_alerta")
