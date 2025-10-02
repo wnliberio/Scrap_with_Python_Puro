@@ -48,3 +48,9 @@ Por Nombre: python main_mercadovalores.py -n "CEDEGUIM S.A."
   python main_predio_quito.py -n "VELA VASCO MARCO ANTONIO"
   # Headless:
   python main_predio_quito.py -n "VELA VASCO MARCO ANTONIO" -H 1
+
+
+Solo para considerar LO DE HOY 02 - Octubre 2025.
+
+Ok tambien para que tomes en cuenta que uno nuca sabrá cuantas páginas arrojará los resultados pueden ser 1 o 2 o más entonces hay que manejar eso tambien.
+Por otro lado sería bueno etiquetar los screenshots que se generan de alguna manera que se pueda saber a que cliente o registro consultado pertenecen 
