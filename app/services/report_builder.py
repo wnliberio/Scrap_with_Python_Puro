@@ -72,11 +72,32 @@ def _format_money(val: float) -> str:
 
 
 def _pick_images(payload: Dict[str, Any]) -> List[str]:
+    """
+    Extrae rutas de screenshots del payload.
+    V25: Soporta array de screenshots (múltiples páginas) y retrocompatibilidad.
+    
+    Prioridad:
+    1. Si existe "screenshots" (array) -> usar todos
+    2. Si no, usar screenshot_path y screenshot_historial_path (método anterior)
+    """
     paths = []
+    
+    # V25: Verificar si hay array de screenshots (navegación automática por páginas)
+    screenshots_array = payload.get("screenshots")
+    if screenshots_array and isinstance(screenshots_array, list):
+        for p in screenshots_array:
+            if p and os.path.exists(p):
+                paths.append(p)
+        
+        if paths:
+            return paths  # Si encontramos screenshots en array, retornar y terminar
+    
+    # Retrocompatibilidad: Usar método anterior (screenshot_path, screenshot_historial_path)
     for k in ("screenshot_path", "screenshot_historial_path"):
         p = payload.get(k)
         if p and os.path.exists(p):
             paths.append(p)
+    
     return paths
 
 
@@ -100,6 +121,7 @@ def _human_name(tipo: str) -> str:
 def build_report_docx(job_id: str, meta: Dict[str, Any], results: Dict[str, Any]) -> str:
     """
     Construye un DOCX profesional (APA-like) con portada, secciones por consulta y conclusión.
+    V25: Maneja múltiples páginas de screenshots automáticamente.
     Retorna la ruta absoluta del archivo .docx generado.
     """
     reports_dir = _ensure_reports_dir()
@@ -110,9 +132,9 @@ def build_report_docx(job_id: str, meta: Dict[str, Any], results: Dict[str, Any]
 
     # Portada / Encabezado
     _add_title(doc, "Revisión de Función Judicial")
-    #tipo_alerta = str(meta.get("tipo_alerta", "General"))
-    #monto = meta.get("monto_usd", None)
-    #fecha_alerta = meta.get("fecha_alerta")
+    tipo_alerta = str(meta.get("tipo_alerta", "General"))
+    monto = meta.get("monto_usd", None)
+    fecha_alerta = meta.get("fecha_alerta")
 
     # Normalizar fecha
     if isinstance(fecha_alerta, str):
@@ -126,7 +148,6 @@ def build_report_docx(job_id: str, meta: Dict[str, Any], results: Dict[str, Any]
         doc.add_paragraph(f"Monto (USD): {_format_money(monto)}")
     if fecha_alerta:
         doc.add_paragraph(f"Fecha de la alerta: {fecha_alerta.isoformat()}")
-    #doc.add_paragraph(f"Job ID: {job_id}")
     doc.add_paragraph(f"Fecha de generación: {datetime.now().isoformat(sep=' ', timespec='seconds')}")
 
     doc.add_paragraph("")  # espacio
@@ -139,38 +160,71 @@ def build_report_docx(job_id: str, meta: Dict[str, Any], results: Dict[str, Any]
     for tipo, payload in results.items():
         _add_subtitle(doc, f"Consulta: {_human_name(tipo)}")
 
-        # Breve comentario/escenario (2 líneas máximo)
+        # Información del escenario
         scenario = payload.get("scenario")
-        if scenario:
-            doc.add_paragraph(f"Resumen: {scenario}")
+        total_pages = payload.get("total_pages", 0)
+        mensaje = payload.get("mensaje", "")
+        
+        # Comentario/resumen
+        if scenario == "no_results":
+            doc.add_paragraph("No se encontraron procesos judiciales para esta consulta.")
+        elif scenario == "results_found":
+            if total_pages > 1:
+                doc.add_paragraph(
+                    f"Se encontraron procesos judiciales distribuidos en {total_pages} páginas. "
+                    "A continuación se presentan todas las capturas:"
+                )
+            else:
+                doc.add_paragraph("Se encontraron procesos judiciales. A continuación la evidencia:")
+        elif mensaje:
+            doc.add_paragraph(f"{mensaje}")
         else:
             doc.add_paragraph("Se adjunta evidencia visual de la consulta realizada.")
 
-        # Insertar imágenes si existen
+        # Insertar imágenes (TODAS las páginas)
         imgs = _pick_images(payload)
         if not imgs:
             doc.add_paragraph("No se generaron capturas para esta consulta.")
         else:
-            for img_path in imgs:
+            # V25: Insertar TODAS las páginas capturadas
+            for idx, img_path in enumerate(imgs, 1):
                 try:
                     # Ajuste proporcional al ancho disponible
                     with Image.open(img_path) as im:
                         doc.add_picture(img_path, width=Inches(max_w))
+                    
+                    # Pie de imagen con número de página si hay múltiples
                     cap = doc.add_paragraph()
                     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    cap.add_run(f"Figura {figura_idx}. Evidencia – {_human_name(tipo)}").italic = True
+                    
+                    if len(imgs) > 1:
+                        # Múltiples páginas: indicar número de página
+                        cap.add_run(
+                            f"Figura {figura_idx}. {_human_name(tipo)} – Página {idx} de {len(imgs)}"
+                        ).italic = True
+                    else:
+                        # Una sola página
+                        cap.add_run(f"Figura {figura_idx}. Evidencia – {_human_name(tipo)}").italic = True
+                    
                     figura_idx += 1
-                except Exception:
+                    
+                    # Espacio entre páginas si hay múltiples
+                    if idx < len(imgs):
+                        doc.add_paragraph("")
+                        
+                except Exception as e:
                     doc.add_paragraph(f"[Aviso] Falló al insertar la imagen: {img_path}")
+                    print(f"Error insertando imagen {img_path}: {e}")
 
-        doc.add_paragraph("")  # separación
+        doc.add_paragraph("")  # separación entre consultas
 
-    # Conclusión (placeholder – sin LLM por ahora)
+    # Conclusión
     _add_subtitle(doc, "Conclusión")
     concl = (
         "Con base en las evidencias adjuntas, se confirma que las consultas fueron ejecutadas en las "
-        "fuentes oficiales indicadas. Este informe no realiza extracción automática de montos; por lo "
-        "que la validación del valor transaccionado debe contrastarse visualmente con las capturas. "
+        "fuentes oficiales indicadas. Este informe presenta capturas de pantalla completas de todas las "
+        "páginas de resultados encontradas. La validación del contenido específico y su relación con el "
+        "monto transaccionado debe realizarse mediante revisión visual de las capturas. "
         "De ser requerido, en una siguiente fase se integrará análisis asistido por LLM con pautas "
         "para relacionar hallazgos con el monto reportado."
     )
