@@ -1,33 +1,35 @@
-# app/db/__init__.py
+# app/db/__init__.py - VERSIÓN CON CARGA AUTOMÁTICA DE .env
 from __future__ import annotations
 
 import os
 import re
-import json
 import urllib.parse as up
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any
+from pathlib import Path
 
-from sqlalchemy import create_engine, Column, Integer, String, Float, Date, DateTime, Text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from datetime import datetime, date
 
-# app/db/__init__.py
-# Re-exporta para permitir: from app.db import get_session
-from .session import get_session
-
-# (opcional) si quieres exponer también engine/SessionLocal:
-# from .session import engine, SessionLocal
-# __all__ = ("get_session", "engine", "SessionLocal")
-
+# ⚠️ ASEGURAR QUE EL .env SE CARGUE
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).parent.parent.parent / ".env"
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path, override=False)  # No sobrescribir si ya está cargado
+except ImportError:
+    print("⚠️ python-dotenv no instalado. Variables de entorno podrían no cargarse.")
+except Exception as e:
+    print(f"⚠️ Error cargando .env: {e}")
 
 # --- Zona horaria Ecuador (para created_at) ---
 try:
     import pytz
     ECUADOR_TZ = pytz.timezone("America/Guayaquil")
+    from datetime import datetime
     def get_ec_time() -> datetime:
         return datetime.now(ECUADOR_TZ)
 except Exception:
-    # Fallback si no hay pytz
+    from datetime import datetime
     def get_ec_time() -> datetime:
         return datetime.now()
 
@@ -35,8 +37,21 @@ except Exception:
 # URL de conexión (acepta JDBC en .env: URL=jdbc:mysql://host:3306/db)
 # ---------------------------------------------------------------------
 def _build_sqlalchemy_url() -> str:
-    url = os.getenv("DATABASE_URL") or os.getenv("URL") or ""
-    if url.startswith("jdbc:mysql://"):
+    """
+    Construye la URL de SQLAlchemy desde variables de entorno.
+    Soporta:
+    1. DATABASE_URL directamente
+    2. URL en formato JDBC (jdbc:mysql://...)
+    3. Variables separadas (DB_USER, DB_PASSWORD, DB_HOST, DB_NAME, DB_PORT)
+    """
+    # OPCIÓN 1: DATABASE_URL ya en formato SQLAlchemy
+    database_url = os.getenv("DATABASE_URL")
+    if database_url and database_url.startswith("mysql+pymysql://"):
+        return database_url
+    
+    # OPCIÓN 2: URL en formato JDBC
+    url = os.getenv("URL")
+    if url and url.startswith("jdbc:mysql://"):
         # jdbc:mysql://host:port/db?params
         m = re.match(r"^jdbc:mysql://([^:/]+)(?::(\d+))?/([^?]+)(\?.*)?$", url)
         if m:
@@ -46,105 +61,129 @@ def _build_sqlalchemy_url() -> str:
 
             user = os.getenv("DB_USER") or ""
             pwd  = os.getenv("DB_PASSWORD") or ""
-            auth = f"{up.quote(user)}:{up.quote(pwd)}@" if (user or pwd) else ""
+            
+            if not user or not pwd:
+                raise RuntimeError(
+                    "⚠️ ERROR: DB_USER y DB_PASSWORD son requeridos para URL JDBC.\n"
+                    "Verifica que estén en tu archivo .env"
+                )
+            
+            auth = f"{up.quote(user)}:{up.quote(pwd)}@"
 
-            # asegurar charset
+            # Asegurar charset
             if "charset=" not in qs:
                 qs = (qs + "&" if qs else "?") + "charset=utf8mb4"
-            # Azure requiere transporte seguro
-            if "ssl=" not in qs and "sslmode=" not in qs:
-                qs = (qs + "&" if qs else "?") + "ssl=true"
-
+            
             return f"mysql+pymysql://{auth}{host}:{port}/{db}{qs}"
-
-    if url:
-        return url  # ya viene en formato SQLAlchemy
-
-    # Construcción por componentes si no hay URL/JDBC
-    user = os.getenv("DB_USER", "")
-    pwd  = os.getenv("DB_PASSWORD", "")
+    
+    # OPCIÓN 3: Variables separadas
+    user = os.getenv("DB_USER")
+    pwd  = os.getenv("DB_PASSWORD")
     host = os.getenv("DB_HOST", "localhost")
     port = os.getenv("DB_PORT", "3306")
-    name = os.getenv("DB_NAME", "test")
-    auth = f"{up.quote(user)}:{up.quote(pwd)}@" if (user or pwd) else ""
-    return f"mysql+pymysql://{auth}{host}:{port}/{name}?charset=utf8mb4&ssl=true"
+    name = os.getenv("DB_NAME")
+    
+    # Validar que existan las credenciales mínimas
+    if not user or not pwd or not name:
+        error_msg = (
+            "⚠️ ERROR: Credenciales de base de datos incompletas.\n"
+            "Verifica que tu archivo .env contenga:\n"
+            f"  - DB_USER: {'✅' if user else '❌ FALTANTE'}\n"
+            f"  - DB_PASSWORD: {'✅' if pwd else '❌ FALTANTE'}\n"
+            f"  - DB_HOST: {host}\n"
+            f"  - DB_PORT: {port}\n"
+            f"  - DB_NAME: {'✅' if name else '❌ FALTANTE'}\n"
+        )
+        raise RuntimeError(error_msg)
+    
+    auth = f"{up.quote(user)}:{up.quote(pwd)}@"
+    return f"mysql+pymysql://{auth}{host}:{port}/{name}?charset=utf8mb4"
+
 
 def _connect_args_for_mysql(url: str) -> Dict[str, Any]:
-    # Azure MySQL con require_secure_transport=ON necesita TLS
+    """
+    Configuración SSL para Azure MySQL si es necesario.
+    """
     if url.startswith("mysql+pymysql://"):
-        return {"ssl": {"ssl": True}}
+        # Azure MySQL requiere SSL
+        try:
+            import certifi
+            return {"ssl": {"ca": certifi.where()}}
+        except ImportError:
+            # Fallback sin verificación de certificado
+            return {"ssl": {"ssl": True}}
     return {}
 
+
 # --- Engine / Session / Base -------------------------------------------------
-DATABASE_URL = _build_sqlalchemy_url()
-CONNECT_ARGS = _connect_args_for_mysql(DATABASE_URL)
+try:
+    DATABASE_URL = _build_sqlalchemy_url()
+    CONNECT_ARGS = _connect_args_for_mysql(DATABASE_URL)
+    
+    engine = create_engine(
+        DATABASE_URL,
+        future=True,
+        pool_pre_ping=True,
+        pool_recycle=280,
+        connect_args=CONNECT_ARGS,
+        echo=False  # Cambiar a True para debugging SQL
+    )
+    
+    SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+    Base = declarative_base()
+    
+    print("✅ Engine de base de datos creado correctamente")
+    
+except Exception as e:
+    print(f"❌ ERROR CRÍTICO creando engine de BD: {e}")
+    print("\n📋 CHECKLIST DE SOLUCIÓN:")
+    print("1. ¿Existe el archivo .env en la raíz del proyecto?")
+    print("2. ¿python-dotenv está instalado? (pip install python-dotenv)")
+    print("3. ¿Las variables DB_USER, DB_PASSWORD, DB_NAME están en .env?")
+    print("4. ¿El servidor MySQL está corriendo?")
+    raise
 
-engine = create_engine(
-    DATABASE_URL,
-    future=True,
-    pool_pre_ping=True,
-    pool_recycle=280,
-    connect_args=CONNECT_ARGS,
-)
 
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
-Base = declarative_base()
-
-# --- Modelo ORM alineado a tu tabla existente -------------------------------
-class Report(Base):
-    __tablename__ = "reports"
-
-    id            = Column(Integer, primary_key=True, autoincrement=True)
-    job_id        = Column(String(64), nullable=False)
-    tipo_alerta   = Column(String(200), nullable=False)
-    monto_usd     = Column(Float, nullable=True)
-    fecha_alerta  = Column(Date, nullable=True)
-    file_path     = Column(String(600), nullable=False)   # ruta al DOCX
-    data_snapshot = Column(Text, nullable=False)          # JSON (resultados/meta)
-    created_at    = Column(DateTime, nullable=False, default=get_ec_time)
-
-# --- Helpers para tabla ------------------------------------------------------
-def create_tables() -> None:
-    Base.metadata.create_all(engine)
-
-def list_reports(fecha_desde: Optional[str], fecha_hasta: Optional[str]) -> List[Dict[str, Any]]:
+# --- Dependency para FastAPI -------------------------------------------------
+def get_db():
     """
-    Lista por rango en created_at. fechas en formato YYYY-MM-DD (opcionales).
+    Dependency para FastAPI que provee una sesión de BD.
+    
+    Uso:
+        @app.get("/items")
+        def get_items(db: Session = Depends(get_db)):
+            return db.query(Item).all()
     """
-    sess = SessionLocal()
+    db = SessionLocal()
     try:
-        q = sess.query(Report)
-        if fecha_desde:
-            q = q.filter(Report.created_at >= f"{fecha_desde} 00:00:00")
-        if fecha_hasta:
-            q = q.filter(Report.created_at <= f"{fecha_hasta} 23:59:59")
-        q = q.order_by(Report.created_at.desc())
-        out: List[Dict[str, Any]] = []
-        for r in q.all():
-            out.append({
-                "id": r.id,
-                "job_id": r.job_id,
-                "tipo_alerta": r.tipo_alerta,
-                "monto_usd": r.monto_usd,
-                "fecha_alerta": r.fecha_alerta.isoformat() if r.fecha_alerta else None,
-                "file_path": r.file_path,
-                "created_at": r.created_at.isoformat() if r.created_at else None,
-            })
-        return out
+        yield db
     finally:
-        sess.close()
+        db.close()
 
-def get_report_path(report_id: int) -> Optional[str]:
-    sess = SessionLocal()
+
+# --- Función de testing ------------------------------------------------------
+def test_connection():
+    """
+    Prueba la conexión a la base de datos.
+    Retorna True si conecta, False si falla.
+    """
     try:
-        r = sess.query(Report).filter(Report.id == report_id).first()
-        return r.file_path if r else None
-    finally:
-        sess.close()
+        db = SessionLocal()
+        db.execute("SELECT 1")
+        db.close()
+        print("✅ Conexión a base de datos verificada")
+        return True
+    except Exception as e:
+        print(f"❌ Error de conexión a BD: {e}")
+        return False
 
+
+# --- Exportaciones -----------------------------------------------------------
 __all__ = [
-    "engine", "SessionLocal", "Base",
-    "Report",
-    "create_tables", "list_reports", "get_report_path",
-    "DATABASE_URL",
+    "engine",
+    "SessionLocal",
+    "Base",
+    "get_db",
+    "test_connection",
+    "get_ec_time"
 ]

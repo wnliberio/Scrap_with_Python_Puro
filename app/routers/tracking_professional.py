@@ -489,3 +489,103 @@ def obtener_reportes_cliente(cliente_id: int) -> List[Dict[str, Any]]:
     Se usa en el modal de detalles del cliente.
     """
     return listar_reportes_tracking(cliente_id=cliente_id, solo_exitosos=True)
+
+
+# AGREGAR ESTE CÓDIGO AL FINAL DE app/routers/tracking_professional.py
+
+@router.get("/reportes/{proceso_id}/download", summary="Descargar reporte de un proceso")
+def descargar_reporte_proceso(proceso_id: int):
+    """
+    Descarga el reporte DOCX de un proceso específico.
+    Se usa cuando el usuario hace clic en "Descargar Reporte" en el modal.
+    """
+    from app.db import SessionLocal
+    from app.db.models_new import DeReporte
+    from fastapi.responses import FileResponse
+    import os
+    
+    db = SessionLocal()
+    try:
+        # Buscar reporte por proceso_id
+        reporte = db.query(DeReporte).filter(
+            DeReporte.proceso_id == proceso_id,
+            DeReporte.generado_exitosamente == True
+        ).order_by(DeReporte.fecha_generacion.desc()).first()
+        
+        if not reporte:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No se encontró reporte para el proceso {proceso_id}"
+            )
+        
+        # Verificar que el archivo existe
+        if not reporte.ruta_archivo or not os.path.exists(reporte.ruta_archivo):
+            raise HTTPException(
+                status_code=404,
+                detail="El archivo del reporte no existe en el servidor"
+            )
+        
+        # Retornar archivo para descarga
+        return FileResponse(
+            path=reporte.ruta_archivo,
+            filename=reporte.nombre_archivo or f"reporte_proceso_{proceso_id}.docx",
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error descargando reporte: {str(e)}"
+        )
+    finally:
+        db.close()
+
+
+@router.get("/clientes/{cliente_id}/reportes", summary="Listar reportes de un cliente")
+def listar_reportes_cliente(cliente_id: int):
+    """
+    Lista todos los reportes generados para un cliente específico.
+    Se usa en el modal de detalles para mostrar historial de reportes.
+    """
+    from app.db import SessionLocal
+    from app.db.models_new import DeReporte, DeProceso
+    
+    db = SessionLocal()
+    try:
+        # Buscar todos los reportes del cliente
+        reportes = db.query(DeReporte).filter(
+            DeReporte.cliente_id == cliente_id
+        ).order_by(DeReporte.fecha_generacion.desc()).all()
+        
+        resultado = []
+        for reporte in reportes:
+            # Obtener información del proceso asociado
+            proceso = db.query(DeProceso).filter(DeProceso.id == reporte.proceso_id).first()
+            
+            resultado.append({
+                'id': reporte.id,
+                'proceso_id': reporte.proceso_id,
+                'job_id': reporte.job_id,
+                'nombre_archivo': reporte.nombre_archivo,
+                'url_descarga': f"/api/tracking/reportes/{reporte.proceso_id}/download",
+                'tamano_bytes': reporte.tamano_bytes,
+                'tipo_archivo': reporte.tipo_archivo,
+                'generado_exitosamente': reporte.generado_exitosamente,
+                'fecha_generacion': reporte.fecha_generacion.isoformat() if reporte.fecha_generacion else None,
+                'proceso': {
+                    'estado': proceso.estado if proceso else None,
+                    'fecha_creacion': proceso.fecha_creacion.isoformat() if proceso and proceso.fecha_creacion else None
+                } if proceso else None
+            })
+        
+        return resultado
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error obteniendo reportes: {str(e)}"
+        )
+    finally:
+        db.close()

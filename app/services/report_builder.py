@@ -71,28 +71,27 @@ def _format_money(val: float) -> str:
         return str(val)
 
 
-def _pick_images(payload: Dict[str, Any]) -> List[str]:
+def _pick_images(payload: dict) -> List[str]:
     """
-    Extrae rutas de screenshots del payload.
-    V25: Soporta array de screenshots (múltiples páginas) y retrocompatibilidad.
-    
-    Prioridad:
-    1. Si existe "screenshots" (array) -> usar todos
-    2. Si no, usar screenshot_path y screenshot_historial_path (método anterior)
+    V25: Filtra solo screenshots de páginas de resultados (pageX.png).
+    Excluye screenshots intermedios del proceso de navegación.
     """
     paths = []
     
-    # V25: Verificar si hay array de screenshots (navegación automática por páginas)
+    # V25: Verificar si hay array de screenshots
     screenshots_array = payload.get("screenshots")
     if screenshots_array and isinstance(screenshots_array, list):
         for p in screenshots_array:
             if p and os.path.exists(p):
-                paths.append(p)
+                # Filtrar: solo incluir screenshots de páginas de resultados
+                # Patrón: funcion_judicial_NOMBRE_page1.png, page2.png, etc.
+                if 'page' in os.path.basename(p).lower():
+                    paths.append(p)
         
         if paths:
-            return paths  # Si encontramos screenshots en array, retornar y terminar
+            return paths
     
-    # Retrocompatibilidad: Usar método anterior (screenshot_path, screenshot_historial_path)
+    # Retrocompatibilidad: método anterior
     for k in ("screenshot_path", "screenshot_historial_path"):
         p = payload.get(k)
         if p and os.path.exists(p):

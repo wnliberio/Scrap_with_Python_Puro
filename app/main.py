@@ -1,22 +1,26 @@
-# app/main.py - VERSIÓN ACTUALIZADA CON TRACKING COMPLETO
+# app/main.py - VERSIÓN CON DAEMON AUTOMÁTICO
+
+# ⚠️ CRÍTICO: Cargar .env ANTES de cualquier otra importación
+from app.load_env import verificar_credenciales
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
-    title="Sistema de Consultas Públicas API",
-    description="API con sistema de tracking granular profesional",
-    version="2.0.0"
+    title="Sistema de Consultas Función Judicial",
+    description="Sistema automatizado con procesamiento en background",
+    version="3.0.0"
 )
 
 # Configurar CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # Vite dev server
-        "http://localhost:3000",  # React dev server
+        "http://localhost:5173",
+        "http://localhost:3000",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:3000",
-        "*"  # Para desarrollo (cambiar en producción)
+        "*"  # Para desarrollo
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -25,45 +29,36 @@ app.add_middleware(
 
 # ===== IMPORTAR ROUTERS =====
 
-# Routers existentes (NO TOCAR - mantener compatibilidad)
-try:
-    from app.routers.consultas import router as consultas_router
-    app.include_router(consultas_router, prefix="/api")
-    print("✅ Router consultas cargado")
-except ImportError as e:
-    print(f"⚠️ No se pudo cargar router consultas: {e}")
-
-try:
-    from app.routers.reports import router as reports_router
-    app.include_router(reports_router, prefix="/api")
-    print("✅ Router reports cargado")
-except ImportError as e:
-    print(f"⚠️ No se pudo cargar router reports: {e}")
-
-try:
-    from app.routers.lista import router as lista_router
-    app.include_router(lista_router, prefix="/api")
-    print("✅ Router lista cargado")
-except ImportError as e:
-    print(f"⚠️ No se pudo cargar router lista: {e}")
-
-# NUEVO ROUTER DE TRACKING (PRIORITARIO)
+# Router de Tracking (principal)
 try:
     from app.routers.tracking_professional import router as tracking_router
     app.include_router(tracking_router, prefix="/api")
     print("✅ Router tracking professional cargado")
 except ImportError as e:
     print(f"❌ Error cargando router tracking: {e}")
-    print("   Verifica que existan los archivos:")
-    print("   - app/routers/tracking_professional.py")
-    print("   - app/services/tracking_professional.py")
+
+# Router del Daemon (NUEVO)
+try:
+    from app.routers.daemon import router as daemon_router
+    app.include_router(daemon_router, prefix="/api")
+    print("✅ Router daemon cargado")
+except ImportError as e:
+    print(f"❌ Error cargando router daemon: {e}")
+
+# Router de Reports (si existe)
+try:
+    from app.routers.reports import router as reports_router
+    app.include_router(reports_router, prefix="/api")
+    print("✅ Router reports cargado")
+except ImportError as e:
+    print(f"⚠️ Router reports no disponible: {e}")
 
 # ===== EVENTOS DE STARTUP =====
 
 @app.on_event("startup")
 async def startup_event():
     """Inicialización del sistema al arrancar"""
-    print("🚀 Iniciando Sistema de Consultas v1.0")
+    print("🚀 Iniciando Sistema de Consultas v3.0")
     
     # Verificar conexión a base de datos
     try:
@@ -80,7 +75,40 @@ async def startup_event():
     except Exception as e:
         print(f"⚠️ Sistema de tracking no disponible: {e}")
     
+    # Verificar daemon
+    try:
+        from app.services.daemon_procesador import obtener_estado_daemon
+        estado = obtener_estado_daemon()
+        print(f"✅ Daemon disponible - Estado: {'Running' if estado['running'] else 'Stopped'}")
+    except Exception as e:
+        print(f"⚠️ Daemon no disponible: {e}")
+    
     print("🎯 Sistema listo para recibir requests")
+    print("\n" + "="*60)
+    print("📌 ENDPOINTS IMPORTANTES:")
+    print("   POST /api/daemon/iniciar   - Iniciar procesamiento automático")
+    print("   POST /api/daemon/detener   - Detener procesamiento")
+    print("   GET  /api/daemon/estado    - Ver estado del daemon")
+    print("   GET  /api/tracking/clientes - Ver clientes (con filtros)")
+    print("="*60 + "\n")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Limpieza al cerrar el sistema"""
+    print("🛑 Cerrando sistema...")
+    
+    # Detener daemon si está corriendo
+    try:
+        from app.services.daemon_procesador import detener_daemon, obtener_estado_daemon
+        estado = obtener_estado_daemon()
+        if estado.get('running'):
+            print("⏹️  Deteniendo daemon...")
+            detener_daemon()
+            print("✅ Daemon detenido")
+    except Exception as e:
+        print(f"⚠️ Error deteniendo daemon: {e}")
+    
+    print("👋 Sistema cerrado")
 
 # ===== ENDPOINTS RAÍZ =====
 
@@ -89,24 +117,24 @@ def root():
     """Endpoint raíz con información del sistema"""
     return {
         "ok": True,
-        "service": "Sistema de Consultas Públicas API",
-        "version": "2.0.0",
+        "service": "Sistema de Consultas Función Judicial",
+        "version": "3.0.0",
         "features": {
             "tracking_granular": True,
-            "reportes_automaticos": True,
-            "sincronizacion_estados": True
+            "procesamiento_automatico": True,
+            "daemon_controlable": True,
+            "solo_funcion_judicial": True
         },
         "endpoints": {
-            "legacy": [
-                "/api/consultas",
-                "/api/reports", 
-                "/api/lista"
+            "daemon": [
+                "/api/daemon/iniciar",
+                "/api/daemon/detener",
+                "/api/daemon/estado"
             ],
             "tracking": [
                 "/api/tracking/health",
                 "/api/tracking/paginas",
-                "/api/tracking/clientes",
-                "/api/tracking/procesos/crear"
+                "/api/tracking/clientes"
             ]
         },
         "docs": "/docs",
@@ -115,75 +143,40 @@ def root():
 
 @app.get("/health")
 def health_check():
-    """Health check básico del sistema"""
-    return {
+    """Health check completo del sistema"""
+    health_status = {
         "status": "healthy",
         "timestamp": "2025-01-20T00:00:00Z",
-        "version": "2.0.0",
-        "components": {
-            "api": "ok",
-            "database": "ok",
-            "tracking": "ok"
-        }
+        "version": "3.0.0",
+        "components": {}
     }
-
-# ===== ENDPOINT DE DIAGNÓSTICO =====
-
-@app.get("/api/diagnostico")
-def diagnostico_sistema():
-    """Endpoint para diagnosticar el estado del sistema completo"""
+    
+    # Verificar BD
     try:
-        # Verificar tracking
-        from app.services.tracking_professional import get_paginas_activas, get_clientes_with_filters
-        
-        paginas = get_paginas_activas()
-        clientes = get_clientes_with_filters()
-        
-        # Verificar base de datos
         from app.db import SessionLocal
         db = SessionLocal()
-        
-        try:
-            # Contar registros en tablas principales
-            from app.db.models_new import DeCliente, DePagina, DeProceso
-            
-            count_clientes = db.query(DeCliente).count()
-            count_paginas = db.query(DePagina).count()
-            count_procesos = db.query(DeProceso).count()
-            
-            return {
-                "status": "ok",
-                "tracking": {
-                    "paginas_disponibles": len(paginas),
-                    "clientes_encontrados": len(clientes)
-                },
-                "database": {
-                    "clientes": count_clientes,
-                    "paginas": count_paginas,
-                    "procesos": count_procesos,
-                    "conexion": "ok"
-                },
-                "servicios": {
-                    "sincronizacion": "disponible",
-                    "tracking_professional": "disponible",
-                    "generacion_reportes": "disponible"
-                }
-            }
-        finally:
-            db.close()
-            
+        db.execute("SELECT 1")
+        db.close()
+        health_status["components"]["database"] = "ok"
     except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e),
-            "recomendaciones": [
-                "Verificar que las tablas de tracking existan",
-                "Verificar conexión a base de datos",
-                "Verificar que los servicios estén importados correctamente"
-            ]
-        }
-
-if __name__ == "__main__":
-    import uvicorn
-    print("🚀 Iniciando servidor de desarrollo...")
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+        health_status["components"]["database"] = f"error: {str(e)}"
+        health_status["status"] = "degraded"
+    
+    # Verificar tracking
+    try:
+        from app.services.tracking_professional import get_paginas_activas
+        paginas = get_paginas_activas()
+        health_status["components"]["tracking"] = f"ok ({len(paginas)} páginas)"
+    except Exception as e:
+        health_status["components"]["tracking"] = f"error: {str(e)}"
+        health_status["status"] = "degraded"
+    
+    # Verificar daemon
+    try:
+        from app.services.daemon_procesador import obtener_estado_daemon
+        estado = obtener_estado_daemon()
+        health_status["components"]["daemon"] = "running" if estado["running"] else "stopped"
+    except Exception as e:
+        health_status["components"]["daemon"] = f"error: {str(e)}"
+    
+    return health_status
