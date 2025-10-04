@@ -1,4 +1,4 @@
-# app/routers/tracking_professional.py - VERSIÓN CON EXECUTOR CONECTADO
+# app/routers/tracking_professional.py - VERSIÓN SIN MANAGER.PY (LIMPIEZA)
 from __future__ import annotations
 from fastapi.responses import FileResponse
 import os
@@ -109,15 +109,12 @@ def actualizar_estado_cliente(
 
 # ===== FUNCIÓN HELPER PARA CONVERTIR A QueryItem =====
 
-# FRAGMENTO DE app/routers/tracking_professional.py
-# SOLO LA FUNCIÓN _convertir_a_query_items QUE NECESITA SER ARREGLADA
-
 def _convertir_a_query_items(cliente_data: Dict[str, Any], paginas_codigos: List[str]) -> List[Dict[str, Any]]:
     """
     Convierte los códigos de páginas en QueryItems compatibles con el executor existente.
     """
     from app.db import SessionLocal
-    from app.db.models_new import DePagina, DeCliente
+    from app.db.models_new import DeCliente
     
     db = SessionLocal()
     try:
@@ -137,7 +134,7 @@ def _convertir_a_query_items(cliente_data: Dict[str, Any], paginas_codigos: List
                 valor = cliente.ruc
             elif codigo in ['contraloria', 'supercias_persona', 'predio_quito', 'predio_manta']:
                 valor = cliente.ci
-            elif codigo in ['denuncias', 'google', 'funcion_judicial']:  # ✅ AGREGADO funcion_judicial
+            elif codigo in ['denuncias', 'google', 'funcion_judicial']:
                 valor = f"{cliente.apellido} {cliente.nombre}".strip()
             elif codigo == 'interpol':
                 valor = cliente.apellido
@@ -162,6 +159,104 @@ def _convertir_a_query_items(cliente_data: Dict[str, Any], paginas_codigos: List
     finally:
         db.close()
 
+# ===== FUNCIÓN DE EJECUCIÓN EN BACKGROUND (VERSIÓN SIN MANAGER.PY) =====
+
+async def _ejecutar_proceso_en_background(
+    job_id: str, 
+    cliente_data: Dict[str, Any],
+    paginas_codigos: List[str],
+    headless: bool
+):
+    """
+    Ejecuta un proceso DIRECTAMENTE usando el executor.
+    ✅ ELIMINADA la dependencia de app.jobs.manager
+    """
+    try:
+        print(f"🚀 Iniciando ejecución directa de proceso {job_id}")
+        print(f"📋 Páginas a ejecutar: {paginas_codigos}")
+        
+        # 1. Construir items para el executor
+        from app.models.schemas import QueryItem
+        from app.services.executor import run_items
+        
+        # Obtener cliente de BD
+        from app.db import SessionLocal
+        from app.db.models_new import DeCliente
+        
+        db = SessionLocal()
+        try:
+            cliente = db.query(DeCliente).filter(DeCliente.id == cliente_data['id']).first()
+            if not cliente:
+                raise ValueError("Cliente no encontrado")
+            
+            # Construir items
+            items = []
+            for codigo in paginas_codigos:
+                valor = None
+                apellidos = None
+                nombres = None
+                
+                if codigo in ['ruc', 'deudas', 'mercado_valores']:
+                    valor = cliente.ruc
+                elif codigo in ['contraloria', 'supercias_persona', 'predio_quito', 'predio_manta']:
+                    valor = cliente.ci
+                elif codigo in ['denuncias', 'google', 'funcion_judicial']:
+                    valor = f"{cliente.apellido} {cliente.nombre}".strip()
+                elif codigo == 'interpol':
+                    valor = cliente.apellido
+                    apellidos = cliente.apellido
+                    nombres = cliente.nombre
+                
+                if valor:
+                    item_dict = {
+                        "tipo": codigo,
+                        "valor": valor
+                    }
+                    if apellidos:
+                        item_dict["apellidos"] = apellidos
+                    if nombres:
+                        item_dict["nombres"] = nombres
+                    
+                    item = QueryItem(**item_dict)
+                    items.append(item)
+        finally:
+            db.close()
+        
+        # 2. Ejecutar DIRECTAMENTE (sin manager.py)
+        print(f"▶️ Ejecutando {len(items)} consultas directamente...")
+        resultado = run_items(items=items, headless=headless)
+        print(f"✅ Ejecución completada")
+        
+        # 3. Sincronizar resultado con sistema de tracking
+        resultado_completo = {
+            "job_id": job_id,
+            "status": "done",
+            "data": {"results": resultado}
+        }
+        
+        from app.services.sincronizacion_service import sincronizar_job_completado
+        await sincronizar_job_completado(job_id, resultado_completo)
+        print(f"✅ Resultado sincronizado con tracking")
+        
+    except Exception as e:
+        print(f"💥 Error ejecutando proceso: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Actualizar estado del cliente a Error
+        try:
+            from app.services.tracking_professional import get_proceso_by_job_id
+            proceso = get_proceso_by_job_id(job_id)
+            if proceso:
+                from app.services.sincronizacion_service import actualizar_cliente_estado
+                await actualizar_cliente_estado(
+                    proceso['cliente_id'], 
+                    'Error', 
+                    str(e)
+                )
+        except Exception as inner_e:
+            print(f"⚠️ Error actualizando estado de cliente: {inner_e}")
+
 # ===== ENDPOINT PRINCIPAL - CREAR Y EJECUTAR PROCESO =====
 
 @router.post("/procesos/crear", summary="Crear y ejecutar nuevo proceso")
@@ -177,7 +272,7 @@ def crear_nuevo_proceso(
     2. Marca los checkboxes de las páginas que quiere consultar
     3. Hace clic en "Agregar a Cola"
     
-    AHORA: El proceso se crea, se registra en BD Y se envía al executor real.
+    ✅ AHORA: Sin usar app.jobs.manager, ejecuta directamente con executor.run_items()
     """
     try:
         import uuid
@@ -193,145 +288,49 @@ def crear_nuevo_proceso(
             generate_report=request.generate_report
         )
         
-        # 2. Obtener datos del cliente para el executor
-        from app.services.tracking_professional import get_clientes_with_filters
-        clientes = get_clientes_with_filters()
-        cliente = next((c for c in clientes if c['id'] == request.cliente_id), None)
+        # 2. Obtener datos del cliente para pasarlos al background
+        from app.db import SessionLocal
+        from app.db.models_new import DeCliente
         
-        if not cliente:
-            raise HTTPException(status_code=404, detail="Cliente no encontrado")
+        db = SessionLocal()
+        try:
+            cliente = db.query(DeCliente).filter(DeCliente.id == request.cliente_id).first()
+            if not cliente:
+                raise HTTPException(status_code=404, detail="Cliente no encontrado")
+            
+            cliente_data = {
+                'id': cliente.id,
+                'nombre': cliente.nombre,
+                'apellido': cliente.apellido,
+                'ci': cliente.ci,
+                'ruc': cliente.ruc
+            }
+        finally:
+            db.close()
         
-        # 3. Convertir a formato QueryItem para el executor
-        query_items = _convertir_a_query_items(cliente, request.paginas_codigos)
-        
-        # 4. Enviar al executor real usando el job manager existente
+        # 3. Lanzar ejecución en background
         background_tasks.add_task(
             _ejecutar_proceso_en_background,
-            job_id,
-            query_items,
-            request.headless,
-            request.generate_report
+            job_id=job_id,
+            cliente_data=cliente_data,
+            paginas_codigos=request.paginas_codigos,
+            headless=request.headless
         )
         
         return {
             "success": True,
             "proceso_id": proceso_id,
             "job_id": job_id,
-            "mensaje": f"Proceso creado y enviado al executor con {len(request.paginas_codigos)} páginas",
-            "paginas_solicitadas": request.paginas_codigos,
-            "items_generados": len(query_items)
+            "mensaje": f"Proceso creado con {len(request.paginas_codigos)} páginas",
+            "paginas_solicitadas": request.paginas_codigos
         }
         
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creando proceso: {str(e)}")
 
-# ===== FUNCIÓN DE BACKGROUND PARA EJECUTAR =====
-
-async def _ejecutar_proceso_en_background(
-    job_id: str, 
-    query_items: List[Dict[str, Any]], 
-    headless: bool,
-    generate_report: bool
-):
-    """
-    Ejecuta el proceso en background usando el executor existente.
-    """
-    try:
-        print(f"🚀 Iniciando ejecución de proceso {job_id}")
-        print(f"📋 Items a ejecutar: {[item['tipo'] for item in query_items]}")
-        
-        # Importar el executor existente
-        from app.jobs.manager import create_job, get_job
-        from app.models.schemas import QueryItem
-        
-        # Convertir a objetos QueryItem
-        items = []
-        for item_dict in query_items:
-            item = QueryItem(
-                tipo=item_dict["tipo"],
-                valor=item_dict["valor"],
-                apellidos=item_dict.get("apellidos"),
-                nombres=item_dict.get("nombres")
-            )
-            items.append(item)
-        
-        # Crear job usando el manager existente
-        executor_job_id = create_job(items, headless=headless)
-        print(f"📤 Job enviado al executor: {executor_job_id}")
-        
-        # Esperar que termine y sincronizar resultado
-        import asyncio
-        while True:
-            await asyncio.sleep(2)  # Revisar cada 2 segundos
-            
-            job_status = get_job(executor_job_id)
-            print(f"🔍 Estado del job {executor_job_id}: {job_status['status']}")
-            
-            if job_status["status"] == "done":
-                # Job terminado exitosamente
-                print(f"✅ Job {executor_job_id} completado")
-                
-                # Sincronizar resultado con sistema de tracking
-                resultado = {
-                    "job_id": job_id,
-                    "status": "done",
-                    "data": job_status.get("data", {})
-                }
-                
-                # Llamar al servicio de sincronización
-                from app.services.sincronizacion_service import sincronizar_job_completado
-                await sincronizar_job_completado(job_id, resultado)
-                
-                break
-                
-            elif job_status["status"] == "error":
-                # Job falló
-                print(f"❌ Job {executor_job_id} falló: {job_status.get('error')}")
-                
-                # Actualizar estado del cliente a Error
-                from app.services.tracking_professional import get_proceso_by_job_id
-                proceso = get_proceso_by_job_id(job_id)
-                if proceso:
-                    from app.services.sincronizacion_service import actualizar_cliente_estado
-                    await actualizar_cliente_estado(
-                        proceso['cliente_id'], 
-                        'Error', 
-                        job_status.get('error', 'Error en ejecución')
-                    )
-                
-                break
-                
-    except Exception as e:
-        print(f"💥 Error ejecutando proceso en background: {e}")
-        import traceback
-        traceback.print_exc()
-
-# ===== ENDPOINTS STUB (PARA IMPLEMENTAR DESPUÉS) =====
-
-@router.get("/procesos/{job_id}", summary="Obtener detalles de proceso")
-def obtener_proceso_detalle(job_id: str) -> Dict[str, Any]:
-    """Obtiene los detalles completos de un proceso por job_id - EN DESARROLLO"""
-    raise HTTPException(status_code=501, detail="Endpoint en desarrollo")
-
-@router.get("/clientes/{cliente_id}/detalles", summary="Obtener detalles completos de cliente")
-def obtener_detalles_cliente(cliente_id: int) -> Dict[str, Any]:
-    """Obtiene detalles completos de un cliente para el modal 'Detalles' - EN DESARROLLO"""
-    raise HTTPException(status_code=501, detail="Endpoint en desarrollo")
-
-@router.get("/estadisticas", summary="Obtener estadísticas del sistema")
-def obtener_estadisticas() -> Dict[str, Any]:
-    """Obtiene estadísticas generales del sistema para dashboards - EN DESARROLLO"""
-    raise HTTPException(status_code=501, detail="Endpoint en desarrollo")
-
-# AGREGAR ESTAS LÍNEAS AL FINAL DE app/routers/tracking_professional.py
-
-# ===== IMPORTS ADICIONALES (AGREGAR AL INICIO DEL ARCHIVO) =====
-#from fastapi.responses import FileResponse
-#import os
-
-# ===== ENDPOINT DE DESCARGA (AGREGAR AL FINAL DEL ARCHIVO) =====
+# ===== ENDPOINTS DE REPORTES =====
 
 @router.get("/reportes/{proceso_id}/download", summary="Descargar reporte de proceso")
 def descargar_reporte_proceso(proceso_id: int) -> FileResponse:
@@ -340,7 +339,6 @@ def descargar_reporte_proceso(proceso_id: int) -> FileResponse:
     Se usa desde el botón "Descargar Reporte" en el modal de detalles.
     """
     try:
-        # Importar modelos necesarios
         from app.db import SessionLocal
         from app.db.models_new import DeReporte
         
@@ -382,7 +380,6 @@ def descargar_reporte_proceso(proceso_id: int) -> FileResponse:
             db.close()
             
     except HTTPException:
-        # Re-lanzar excepciones HTTP
         raise
     except Exception as e:
         print(f"❌ Error descargando reporte proceso {proceso_id}: {str(e)}")
@@ -390,8 +387,6 @@ def descargar_reporte_proceso(proceso_id: int) -> FileResponse:
             status_code=500, 
             detail=f"Error interno descargando reporte: {str(e)}"
         )
-
-# REEMPLAZAR la función listar_reportes_tracking en app/routers/tracking_professional.py
 
 @router.get("/reportes", summary="Listar todos los reportes disponibles")
 def listar_reportes_tracking(
@@ -416,7 +411,6 @@ def listar_reportes_tracking(
             if cliente_id:
                 query = query.filter(DeReporte.cliente_id == cliente_id)
             
-            # FIX: Verificar que fecha_desde sea string válido
             if fecha_desde and isinstance(fecha_desde, str) and fecha_desde.strip():
                 try:
                     fecha_desde_dt = datetime.strptime(fecha_desde.strip(), "%Y-%m-%d")
@@ -424,7 +418,6 @@ def listar_reportes_tracking(
                 except ValueError as e:
                     print(f"⚠️ Fecha desde inválida ignorada: {fecha_desde} - {e}")
             
-            # FIX: Verificar que fecha_hasta sea string válido
             if fecha_hasta and isinstance(fecha_hasta, str) and fecha_hasta.strip():
                 try:
                     fecha_hasta_dt = datetime.strptime(fecha_hasta.strip(), "%Y-%m-%d")
@@ -440,12 +433,9 @@ def listar_reportes_tracking(
             # Enriquecer con información del cliente
             resultado = []
             for reporte in reportes:
-                # Obtener información del cliente
                 cliente = db.query(DeCliente).filter(DeCliente.id == reporte.cliente_id).first()
                 
-                # Verificar si el archivo existe
-                archivo_existe = (reporte.ruta_archivo and 
-                                os.path.exists(reporte.ruta_archivo))
+                archivo_existe = (reporte.ruta_archivo and os.path.exists(reporte.ruta_archivo))
                 
                 resultado.append({
                     'id': reporte.id,
@@ -459,94 +449,32 @@ def listar_reportes_tracking(
                         'ruc': cliente.ruc
                     } if cliente else None,
                     'tipo_alerta': reporte.tipo_alerta,
-                    'monto_usd': reporte.monto_usd,
+                    'monto_usd': float(reporte.monto_usd) if reporte.monto_usd else None,
                     'fecha_alerta': reporte.fecha_alerta.isoformat() if reporte.fecha_alerta else None,
                     'nombre_archivo': reporte.nombre_archivo,
-                    'url_descarga': reporte.url_descarga,
+                    'url_descarga': f"/api/tracking/reportes/{reporte.proceso_id}/download",
                     'tamano_bytes': reporte.tamano_bytes,
                     'tipo_archivo': reporte.tipo_archivo,
                     'generado_exitosamente': reporte.generado_exitosamente,
-                    'fecha_generacion': reporte.fecha_generacion.isoformat(),
+                    'fecha_generacion': reporte.fecha_generacion.isoformat() if reporte.fecha_generacion else None,
                     'archivo_existe': archivo_existe
                 })
             
-            print(f"✅ Reportes listados correctamente: {len(resultado)} encontrados")
             return resultado
             
         finally:
             db.close()
             
     except Exception as e:
-        print(f"❌ Error listando reportes: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error listando reportes: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error obteniendo reportes: {str(e)}"
+        )
 
-@router.get("/clientes/{cliente_id}/reportes", summary="Obtener reportes de un cliente específico")
+@router.get("/clientes/{cliente_id}/reportes", summary="Obtener reportes de un cliente")
 def obtener_reportes_cliente(cliente_id: int) -> List[Dict[str, Any]]:
     """
     Obtiene todos los reportes de un cliente específico.
-    Se usa en el modal de detalles del cliente.
-    """
-    return listar_reportes_tracking(cliente_id=cliente_id, solo_exitosos=True)
-
-
-# AGREGAR ESTE CÓDIGO AL FINAL DE app/routers/tracking_professional.py
-
-@router.get("/reportes/{proceso_id}/download", summary="Descargar reporte de un proceso")
-def descargar_reporte_proceso(proceso_id: int):
-    """
-    Descarga el reporte DOCX de un proceso específico.
-    Se usa cuando el usuario hace clic en "Descargar Reporte" en el modal.
-    """
-    from app.db import SessionLocal
-    from app.db.models_new import DeReporte
-    from fastapi.responses import FileResponse
-    import os
-    
-    db = SessionLocal()
-    try:
-        # Buscar reporte por proceso_id
-        reporte = db.query(DeReporte).filter(
-            DeReporte.proceso_id == proceso_id,
-            DeReporte.generado_exitosamente == True
-        ).order_by(DeReporte.fecha_generacion.desc()).first()
-        
-        if not reporte:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No se encontró reporte para el proceso {proceso_id}"
-            )
-        
-        # Verificar que el archivo existe
-        if not reporte.ruta_archivo or not os.path.exists(reporte.ruta_archivo):
-            raise HTTPException(
-                status_code=404,
-                detail="El archivo del reporte no existe en el servidor"
-            )
-        
-        # Retornar archivo para descarga
-        return FileResponse(
-            path=reporte.ruta_archivo,
-            filename=reporte.nombre_archivo or f"reporte_proceso_{proceso_id}.docx",
-            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error descargando reporte: {str(e)}"
-        )
-    finally:
-        db.close()
-
-
-@router.get("/clientes/{cliente_id}/reportes", summary="Listar reportes de un cliente")
-def listar_reportes_cliente(cliente_id: int):
-    """
-    Lista todos los reportes generados para un cliente específico.
     Se usa en el modal de detalles para mostrar historial de reportes.
     """
     from app.db import SessionLocal
@@ -554,14 +482,12 @@ def listar_reportes_cliente(cliente_id: int):
     
     db = SessionLocal()
     try:
-        # Buscar todos los reportes del cliente
         reportes = db.query(DeReporte).filter(
             DeReporte.cliente_id == cliente_id
         ).order_by(DeReporte.fecha_generacion.desc()).all()
         
         resultado = []
         for reporte in reportes:
-            # Obtener información del proceso asociado
             proceso = db.query(DeProceso).filter(DeProceso.id == reporte.proceso_id).first()
             
             resultado.append({
@@ -589,3 +515,20 @@ def listar_reportes_cliente(cliente_id: int):
         )
     finally:
         db.close()
+
+# ===== ENDPOINTS STUB (PARA IMPLEMENTAR DESPUÉS) =====
+
+@router.get("/procesos/{job_id}", summary="Obtener detalles de proceso")
+def obtener_proceso_detalle(job_id: str) -> Dict[str, Any]:
+    """Obtiene los detalles completos de un proceso por job_id - EN DESARROLLO"""
+    raise HTTPException(status_code=501, detail="Endpoint en desarrollo")
+
+@router.get("/clientes/{cliente_id}/detalles", summary="Obtener detalles completos de cliente")
+def obtener_detalles_cliente(cliente_id: int) -> Dict[str, Any]:
+    """Obtiene detalles completos de un cliente para el modal 'Detalles' - EN DESARROLLO"""
+    raise HTTPException(status_code=501, detail="Endpoint en desarrollo")
+
+@router.get("/estadisticas", summary="Obtener estadísticas del sistema")
+def obtener_estadisticas() -> Dict[str, Any]:
+    """Obtiene estadísticas generales del sistema para dashboards - EN DESARROLLO"""
+    raise HTTPException(status_code=501, detail="Endpoint en desarrollo")
