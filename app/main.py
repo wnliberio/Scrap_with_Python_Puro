@@ -74,6 +74,8 @@ async def startup_event():
         print(f"✅ Sistema de tracking iniciado - {len(paginas)} páginas disponibles")
     except Exception as e:
         print(f"⚠️ Sistema de tracking no disponible: {e}")
+        import traceback
+        traceback.print_exc()  # ← ESTO MOSTRARÁ EL ERROR COMPLETO
     
     # Verificar daemon
     try:

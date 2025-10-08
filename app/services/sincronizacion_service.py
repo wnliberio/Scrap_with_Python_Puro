@@ -11,16 +11,9 @@ import json
 from pathlib import Path
 
 # Usar la importación correcta según tu estructura
-try:
-    from app.db import SessionLocal
-    print("✅ Usando SessionLocal desde app.db")
-except ImportError:
-    try:
-        from app.dbb import SessionLocal
-        print("✅ Usando SessionLocal desde app.dbb")
-    except ImportError:
-        print("❌ No se pudo importar SessionLocal")
-        raise
+# Al inicio del archivo, solo esto:
+from app.db import SessionLocal
+print("✅ Usando SessionLocal desde app.db")
 
 from app.db.models_new import (
     DeCliente, DeProceso, DeConsulta, DePagina, DeReporte

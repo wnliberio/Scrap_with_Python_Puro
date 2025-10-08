@@ -54,3 +54,8 @@ Solo para considerar LO DE HOY 02 - Octubre 2025.
 
 Ok tambien para que tomes en cuenta que uno nuca sabrá cuantas páginas arrojará los resultados pueden ser 1 o 2 o más entonces hay que manejar eso tambien.
 Por otro lado sería bueno etiquetar los screenshots que se generan de alguna manera que se pueda saber a que cliente o registro consultado pertenecen 
+
+
+Miercoles 8-10-2025
+Hoy modifiqué el back con el fin de agregar toda la DB desde MySQL a SQL Server y ya está hecho hasta esta hora 14:15 pm
+Hasta commit c91e636  todo funciona bien pero con la DB en MySQL
