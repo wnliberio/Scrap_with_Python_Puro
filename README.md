@@ -59,3 +59,4 @@ Por otro lado sería bueno etiquetar los screenshots que se generan de alguna ma
 Miercoles 8-10-2025
 Hoy modifiqué el back con el fin de agregar toda la DB desde MySQL a SQL Server y ya está hecho hasta esta hora 14:15 pm
 Hasta commit c91e636  todo funciona bien pero con la DB en MySQL
+En este commit dond esubo este cambio es donde ya está Migrado a SQL server las 5 tablas
